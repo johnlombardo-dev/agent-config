@@ -1,0 +1,6 @@
+interface:
+  display_name: "Deliver Sol-Luna Goals"
+  short_description: "Deliver goals through direct Sol-Luna loops"
+  default_prompt: "Use $deliver-sol-luna-goals to research and shape successive sub-goals in the main thread, dispatch bounded Luna contracts, and loop until verified completion."
+policy:
+  allow_implicit_invocation: false
