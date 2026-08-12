@@ -1,16 +1,13 @@
 # Agent config
 
-Personal Codex instructions and agent skills. The installer keeps the files in
-this repository as the source of truth and links them into the locations read by
+Reusable Codex instructions and agent skills. The installer keeps this
+repository as the source of truth and links its files into the locations read by
 agents.
 
 ## Install from GitHub
 
-Requires the GitHub CLI to be authenticated with access to this private
-repository:
-
 ```bash
-(set -o pipefail; export GITHUB_TOKEN="$(gh auth token)"; curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github.raw+json" https://api.github.com/repos/johnlombardo-dev/agent-config/contents/install.sh | bash)
+curl -fsSL https://raw.githubusercontent.com/johnlombardo-dev/agent-config/main/install.sh | bash
 ```
 
 This downloads a persistent copy to `~/.local/share/agent-config` before

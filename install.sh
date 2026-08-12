@@ -13,7 +13,7 @@ fi
 
 if [[ ! -f "$repo_dir/AGENTS.md" || ! -d "$repo_dir/skills" ]]; then
   install_dir="${AGENT_CONFIG_INSTALL_DIR:-$target_home/.local/share/agent-config}"
-  archive_url="${AGENT_CONFIG_ARCHIVE_URL:-https://api.github.com/repos/johnlombardo-dev/agent-config/tarball/main}"
+  archive_url="${AGENT_CONFIG_ARCHIVE_URL:-https://github.com/johnlombardo-dev/agent-config/archive/refs/heads/main.tar.gz}"
   checkout_backup_base="$target_home/.local/state/agent-config/checkouts"
   download_dir="$(mktemp -d "${TMPDIR:-/tmp}/agent-config.XXXXXX")"
 
@@ -21,11 +21,6 @@ if [[ ! -f "$repo_dir/AGENTS.md" || ! -d "$repo_dir/skills" ]]; then
     rm -rf -- "$download_dir"
   }
   trap cleanup_download EXIT
-
-  if [[ "$archive_url" == https://api.github.com/* ]] && [[ -z "${GITHUB_TOKEN:-}" ]]; then
-    printf 'GITHUB_TOKEN is required when running this installer through a pipe.\n' >&2
-    exit 1
-  fi
 
   curl_args=(-fsSL)
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
