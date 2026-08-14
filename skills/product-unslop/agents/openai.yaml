@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Unslop"
+  short_description: "Replace product hype with grounded explanation"
+  default_prompt: "Use $product-unslop to rewrite this product copy so it explains the product clearly without hype."
