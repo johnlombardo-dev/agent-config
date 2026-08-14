@@ -40,7 +40,7 @@ CONTRACTS: proposed/accepted/rejected/completed/superseded; dependency-blocked c
 CYCLE OUTCOME: clean|findings|stale|blocked; unresolved findings; required-check result; resulting head
 ```
 
-Keep the skill-use outcome active while an authorized review gate remains. A locally clean cycle, draft-to-ready transition, green intermediate CI run, or completed fix batch is not `goal-verified`. For pull-request delivery, record `goal-verified` only with the exact hosted-reviewed head, a no-findings result, all required CI green, zero unresolved review threads, and no other required work. If publication or hosted review needs missing authority or capability, use the corresponding non-complete outcome instead.
+Keep the skill-use outcome active while the selected delivery mode has an unfinished gate. A locally clean cycle, draft-to-ready transition, green intermediate CI run, or completed fix batch is not default `goal-verified`. For default delivery, record `goal-verified` only after the exact locally and remotely clean head passes required CI, has zero unresolved review threads, and is merged. For no-PR mode, require the current clean local gate. For no-merge mode, require both clean gates and green required CI, but not merge. Record a capability or authority blocker with the corresponding non-complete outcome.
 
 After resolving the canonical remote, store its repository ID exactly as `host/owner/repository` in the `USE` entry and reuse that path for every continuation. Do not create separator variants for the same repository.
 

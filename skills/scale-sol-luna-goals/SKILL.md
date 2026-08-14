@@ -6,8 +6,9 @@ description: >-
   $scale-sol-luna-goals or asks the orchestrator to delegate problem-space
   research and Luna-safe contract writing to capable Sol subagents, dispatch
   bounded Luna execution, integrate evidence, and continue across sub-goals
-  until the whole goal is verified. When pull-request delivery is authorized,
-  use local and hosted review-convergence loops before completion. The main
+  until the whole goal is verified. By default, finish through local
+  review-agent convergence, hosted PR review convergence, green required CI,
+  and merge. Honor explicit no-PR, no-merge, and draft-PR constraints. The main
   orchestrator owns decisions, worker dispatch, integration, replanning, and
   completion.
 ---
@@ -41,6 +42,24 @@ Each layer constrains the next; a lower layer never relaxes a higher one. First 
 ## Authority and invariants
 
 Keep the main orchestrator authoritative and its active context compact.
+
+Invoking this skill authorizes the normal Git and GitHub mutations needed to create a branch,
+commit, push, open or update a pull request, request review, resolve settled threads, mark the pull
+request ready, and merge it. Do not ask for that authority again. Higher-level instructions and
+explicit user restrictions still take precedence.
+
+Apply these delivery modes. Equivalent wording has the same effect, and the most restrictive mode
+wins:
+
+| User request | Required delivery |
+| --- | --- |
+| No delivery restriction | Local gate, hosted gate, green required CI, then merge. |
+| “Do not create a PR” | Local `review-agent` gate only; do not push, create a PR, run hosted review, or merge. |
+| “Do not merge the PR” | Local and hosted gates with green required CI; leave the PR open and unmerged. |
+| “Create a draft PR” | Keep the PR draft during review and request each hosted review with a top-level `@codex review` comment; after both gates pass, mark it ready and merge unless merge is also forbidden. |
+
+“Do not create a PR” overrides draft-PR and no-merge instructions. “Do not merge” overrides the
+default merge after a draft review.
 
 - The orchestrator owns the user goal, roadmap, Consequential Decisions, contract acceptance, implementation-worker dispatch, integration, and completion.
 - Sol contract writers research and propose; they do not decide for the orchestrator, implement, integrate, or declare completion. Under the review-phase `xhigh` profile, a contract writer may append normalized findings and proposed contracts only to its explicitly assigned external review-contract stack; persistence never accepts a finding disposition or contract and grants no repository, Git, or GitHub mutation authority.
@@ -99,7 +118,7 @@ Repeat this loop until the whole goal is verified:
 3. **Shape.** Resolve Consequential Decisions in the main thread and choose one dependency-ready outcome. Select its Luna profile from [references/task-packets.md](references/task-packets.md).
 4. **Dispatch.** Recheck the task fingerprint; treat changed facts, decisions, ownership, constraints, or checks as material drift requiring re-adjudication. Reserve mutation ownership, verify the current runtime route, and send only worker-facing contract content.
 5. **Integrate.** Review scope and evidence, run proportionate independent verification, integrate or reject the result, close the execution worker, and update the ledger. Retain one writer through the next framing checkpoint only when a same-domain use is named; otherwise close it.
-6. **Review-converge when required.** For authorized pull-request delivery, run the local gate and then the hosted PR gate in [references/review-convergence.md](references/review-convergence.md). Feed accepted findings back through Shape, Dispatch, and Integrate; do not treat a locally clean draft as completion.
+6. **Review-converge and deliver.** Apply the selected delivery mode, then run its local gate, hosted gate, and merge requirements from [references/review-convergence.md](references/review-convergence.md). Feed accepted findings back through Shape, Dispatch, and Integrate. Never skip a required gate or infer cleanliness after a changed head.
 7. **Replan or finish.** Feed findings back into the roadmap. Continue from step 2 while required work remains; otherwise run the final goal gate.
 
 Do not stop because an initial roadmap, one writer assignment, one Luna handoff, a locally clean review, or a green intermediate commit is exhausted. Stop only when the goal is verified, the user changes it, or progress requires new authority, unavailable capability, or an unresolved Consequential Decision.
@@ -130,4 +149,4 @@ Before any model-specific dispatch, read [references/runtime-routing.md](referen
 
 At each named review checkpoint, assess assumptions, confidence, risks, rework, duplicated research, verification cost, and whether the roadmap still reflects integrated evidence. When a fix repeatedly reopens the same Failure Domain or expands its dependent failure surface, stop patch fanout and reframe that domain before dispatching more Luna work.
 
-Before final signoff, verify the actual goal criteria, required retirement accounting, final integration checks, and absence of unresolved required work. If pull-request delivery is in scope, also require an exact-head hosted review with no actionable findings, all required CI green, and no unresolved review threads. Complete the current skill-use record, including null, negative, ambiguous, and unavailable observations.
+Before final signoff, verify the actual goal criteria, required retirement accounting, final integration checks, absence of unresolved required work, and the selected delivery mode's terminal state. Default completion requires the reviewed green head to be merged. No-PR completion requires a clean current local gate. No-merge completion requires a clean current local gate, clean exact-head hosted review, green required CI, and no unresolved review threads. Complete the current skill-use record, including null, negative, ambiguous, and unavailable observations.

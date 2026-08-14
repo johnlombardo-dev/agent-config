@@ -1,6 +1,6 @@
 interface:
   display_name: "Scale Sol-Luna Goals"
-  short_description: "Scale goals through implementation and review"
-  default_prompt: "Use $scale-sol-luna-goals to coordinate Sol research, bounded Luna execution, and local plus hosted review convergence until the authorized goal is verified."
+  short_description: "Scale goals through implementation, review, and merge"
+  default_prompt: "Use $scale-sol-luna-goals to coordinate Sol research, bounded Luna execution, local and hosted review convergence, and merge the green pull request unless I explicitly restrict delivery."
 policy:
   allow_implicit_invocation: false
