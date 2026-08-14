@@ -7,7 +7,7 @@ agents.
 ## Install from GitHub
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/johnlombardo-dev/agent-config/main/install.sh | bash
+curl -fsSL -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/johnlombardo-dev/agent-config/contents/install.sh?ref=main" | bash
 ```
 
 This downloads a persistent copy to `~/.local/share/agent-config` before

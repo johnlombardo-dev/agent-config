@@ -1,11 +1,11 @@
 # Review convergence
 
-Read this reference when pull-request delivery is part of the authorized goal. It owns review-stage mechanics, the external review-contract stack, and the returned manifest only. Role authority, dispatch validity, Luna schemas, runtime mappings, and metrics remain owned by their parent sources.
+Read this reference for every skill invocation that produces implementation changes. It owns review-stage mechanics, the external review-contract stack, and the returned manifest only. Role authority, delivery modes, dispatch validity, Luna schemas, runtime mappings, and metrics remain owned by their parent sources.
 
 ## Preconditions and authority
 
 - Enter review convergence only after the implementation candidate is integrated and its proportionate owning checks pass.
-- Open, publish, update, or mark a pull request ready only when the user goal authorizes those external mutations. Otherwise run any authorized local review, report `requires-new-authority`, and leave the hosted gate pending.
+- Apply the delivery mode selected by the parent skill. Default authority includes the Git and GitHub mutations required by that mode.
 - Resolve the intended base branch, merge base, exact head, dirty state, required CI, configured hosted reviewer, and applicable repository instructions before the first cycle.
 - Use one reusable cycle below. The local gate supplies findings from a fresh `review-agent`; the hosted gate supplies findings from the GitHub review bot.
 - Review-contract stack persistence is authorized by this skill only while review convergence is active.
@@ -49,17 +49,28 @@ Do not create one contract per finding mechanically. Combine findings when parti
 
 ## Local gate
 
-Open or reuse a draft pull request when authorized so the merge target and CI surface are explicit. Repeat local cycles until the fresh reviewer returns `No findings.` for the exact head. Then run the required broad local/CI-equivalent gates. Advance only when the no-findings result is current and those checks are green; mark the pull request ready for review only after this gate.
+Repeat local cycles until the fresh reviewer returns `No findings.` for the exact candidate and the required broad local or CI-equivalent gates pass. A code change invalidates that result and requires a fresh cycle.
+
+For no-PR mode, include the exact merge base, head, and declared dirty state in the candidate fingerprint, then stop after this gate. Do not push, create a pull request, run hosted review, or merge.
+
+For every other mode, create or update a draft pull request with the exact local-clean head. Mark it ready before hosted review unless draft-PR mode applies.
 
 ## Hosted PR gate
 
-Wait for the configured Codex GitHub review bot's completed review of the exact ready-for-review head. Give its PR, review, and exact-head pointers to a Sol `xhigh` contract writer using the hosted review-phase profile; the writer reads the findings directly. Execute accepted contracts through the same dependency-aware cycle, push the integrated head, and request or await a new exact-head review. Resolve a thread only after its accepted contract evidence is integrated. Adjudicate rejected or contract-conflicting findings explicitly; do not silently discard or resolve them.
+For a ready pull request, wait for the configured Codex GitHub review bot's completed review. For a draft pull request, add a top-level comment containing exactly `@codex review` and wait for the completed review without marking the pull request ready. Give the PR, review, and exact-head pointers to a Sol `xhigh` contract writer using the hosted review-phase profile; the writer reads the findings directly.
+
+Execute accepted contracts through the same dependency-aware cycle. Any code change invalidates the local gate: rerun it, push the new head, then request or await a new exact-head hosted review. In draft-PR mode, add a new top-level `@codex review` comment after each such push. Resolve a thread only after its accepted contract evidence is integrated. Adjudicate rejected or contract-conflicting findings explicitly; do not silently discard or resolve them.
 
 Complete the hosted gate only when all of these describe the same exact head:
 
 - the hosted reviewer reports no actionable findings;
+- the local `No findings.` result covers the same head;
 - every required CI check is green;
 - no review thread remains unresolved; and
 - the goal has no other required work.
 
 A stale review, reviewer reaction without a completed result, green CI on another head, or a locally clean cycle cannot satisfy this gate.
+
+## Merge gate
+
+After the hosted gate passes, leave the pull request open when merge is forbidden. Otherwise mark a draft pull request ready, merge with the repository's required or default method, and verify that the merged commit contains the exact reviewed head. Do not report completion while the merge is queued, blocked, or incomplete.
