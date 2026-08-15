@@ -17,7 +17,31 @@ description: >-
 
 ## Normative ownership, terms, and precedence
 
-This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only assignment schemas and Luna profile selection. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [review-convergence reference](references/review-convergence.md) owns only the local and hosted review mechanics, review-contract stack, and manifest. The [outcome-metrics reference](references/outcome-metrics.md) owns only the required observation record and optional evaluation schema. References must not redefine this file's semantics.
+This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only assignment schemas and Luna profile selection. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [review-convergence reference](references/review-convergence.md) owns only the local and hosted review mechanics and manifest. The [outcome-metrics reference](references/outcome-metrics.md) owns the canonical storage convention, required event records, timing, routine summary, and named-comparison schema. References must not redefine this file's semantics.
+
+## Invocation contract
+
+Once invoked, this skill runs the complete goal lifecycle without requiring separate requests for its normal functions:
+
+- persist and maintain compact goal state;
+- record timestamped metrics, assignment outcomes, review cycles, and review-step durations;
+- summarize those metrics at review checkpoints and final signoff;
+- retain and reuse one same-domain writer when the reuse rule applies;
+- grant bounded depth-one research and external artifact scope when the dispatch rules require them;
+- record review findings, proposed contracts, decisions, and results in the canonical invocation log; and
+- execute the selected delivery mode through its terminal state.
+
+Task-state predicates such as Worth, Decision-ready, applicable review steps, and likely writer reuse decide whether work is necessary. They are not user opt-in gates. A reference may specify mechanics or narrow behavior for safety, authority, capability, or relevance. It must not require the user to ask again for a normal function listed above.
+
+SSLG has exactly three current persistence locations, all keyed by the same canonical `repository_id`:
+
+| Data | Canonical path | Shape |
+| --- | --- | --- |
+| Invocation events, metrics, review findings, contracts, decisions, and results | `~/.codex/subagent-metrics/scale-sol-luna-goals/<repository-id>/<skill-use-id>.jsonl` | One append-only log per invocation |
+| Current goal state | `~/.codex/subagent-state/scale-sol-luna-goals/<repository-id>/<goal-id>.json` | One atomically replaced snapshot per goal |
+| Necessary long artifacts | `~/.codex/subagent-artifacts/scale-sol-luna-goals/<repository-id>/<skill-use-id>/` | Bounded files referenced by the log or snapshot |
+
+No other path is a current SSLG write target. In particular, do not create or append to `~/.codex/subagent-contracts`; any existing content there is legacy evidence.
 
 - **Worth:** A delegated route's expected context, time, or confidence gain exceeds its setup, review, and integration cost.
 - **Defined:** The question or outcome, authority, relevant state, and expected return are bounded.
@@ -62,7 +86,7 @@ wins:
 default merge after a draft review.
 
 - The orchestrator owns the user goal, roadmap, Consequential Decisions, contract acceptance, implementation-worker dispatch, integration, and completion.
-- Sol contract writers research and propose; they do not decide for the orchestrator, implement, integrate, or declare completion. Under the review-phase `xhigh` profile, a contract writer may append normalized findings and proposed contracts only to its explicitly assigned external review-contract stack; persistence never accepts a finding disposition or contract and grants no repository, Git, or GitHub mutation authority.
+- Sol contract writers research and propose; they do not decide for the orchestrator, implement, integrate, or declare completion. Under the review-phase `xhigh` profile, a contract writer may append normalized findings and proposed contracts only to the canonical invocation log assigned by the orchestrator; persistence never accepts a finding disposition or contract and grants no repository, Git, or GitHub mutation authority.
 - Reviewers inspect one exact target read-only and return findings. They do not shape contracts, implement, integrate, persist state, or dispatch another agent.
 - Luna executes one accepted task with frozen Consequential Decisions. It stops when success requires a decision or scope change and cannot dispatch another agent.
 - Give every mutation surface one active owner. Parallel work must be independently acceptable and non-overlapping.
@@ -83,16 +107,30 @@ If not Defined, frame it. If Luna work is not Decision-ready, research or decide
 
 ## Compact goal state
 
-Keep goal state inline or in available task/session state by default. Persist it only with explicit authorization. Before repository-local persistence, verify that the target is ignored and assign one mutation owner. Keep persisted state bounded, redacted, safely discardable, reconstructible from current authorities, and non-authoritative. Treat missing, stale, corrupt, or partial state as a cache miss. Require no particular persistence path or directory layout.
+Resolve `repository_id` once at invocation with `scripts/repository_id.py` and reuse that exact value for every SSLG path and record. Keep a compact copy of goal state inline and persist its current snapshot outside repositories at `~/.codex/subagent-state/scale-sol-luna-goals/<repository-id>/<goal-id>.json`. Invoking this skill authorizes that bounded state file. Write it with `scripts/write_goal_state.py` before the first dispatch, after every integration or replan, at each review checkpoint, and before ending the invocation. Do not ask for separate persistence authorization.
 
-```text
-GOAL: completion criteria and next review checkpoint
-STATE: commit plus relevant dirty state, document/dependency versions, and known baseline
-DECISIONS: accepted decision IDs with evidence pointers
-ACTIVE: task IDs, owners, and reserved mutation surfaces
-NEXT: one ready task and at most one provisional successor
-BLOCKERS: unresolved decisions, prerequisites, capability gaps, and risks
-METRICS: current skill-use ID and record pointer or compact inline state
+Keep persisted state bounded, redacted, safely discardable, reconstructible from current authorities, and non-authoritative. Treat missing, stale, corrupt, or partial state as a cache miss. Never put this coordination state in the user's repository.
+
+```json
+{
+  "goal": {
+    "summary": "goal",
+    "completion_criteria": ["criterion"],
+    "next_review_checkpoint": "checkpoint"
+  },
+  "state": {
+    "fingerprint": "commit and relevant dirty state",
+    "baseline": ["document, dependency, or check state"]
+  },
+  "decisions": ["accepted decision and evidence pointer"],
+  "active": ["task, owner, and reserved mutation surface"],
+  "next": ["one ready task and at most one provisional successor"],
+  "blockers": ["decision, prerequisite, capability gap, or risk"],
+  "metrics": {
+    "skill_use_id": "ID",
+    "record_path": "path"
+  }
+}
 ```
 
 Replace superseded entries instead of appending history. Give each agent only relevant `KNOWN`, `VERIFY`, `UNKNOWN`, and `AVOID` facts. Require an evidence gap or changed state before repeating prior research.
@@ -101,7 +139,7 @@ Replace superseded entries instead of appending history. Give each agent only re
 
 Treat agent output as candidate evidence, not authority. `KNOWN` means a current, source-backed fact admitted by the orchestrator; keep accepted Consequential Decisions separate. Prior conversation, review, persistence, or model identity never upgrades a claim.
 
-Keep writers ephemeral by default. At integration, retain one idle same-domain writer through the next framing checkpoint only when one probable sequential reuse is named. Resume it only after the new assignment passes the validity and Worth filters. Treat every resumption as a new dispatch and provide the current question, authority, material state delta, stop conditions, and expected return. Carry no mutation right, accepted fact, decision, or runtime guarantee through retention.
+While required work remains, retain at most one idle same-domain writer through the next framing checkpoint when its domain has a likely next research or shaping question. The orchestrator identifies that probable reuse without asking the user. Close the writer when no such use exists. Resume it only after the new assignment passes the validity and Worth filters. Treat every resumption as a new dispatch and provide the current question, authority, material state delta, stop conditions, and expected return. Carry no mutation right, accepted fact, decision, or runtime guarantee through retention.
 
 Reuse only selected findings with authoritative evidence pointers, applicability, last-checked state, and invalidation triggers. Revalidate affected findings after material drift. If retained context is unreliable or its runtime cannot satisfy the new assignment's verified route, dispatch a fresh writer or keep the work pending.
 
@@ -109,7 +147,7 @@ Use independent evidence review only when an incorrect reused finding could affe
 
 ## Canonical iterative goal loop
 
-At invocation, read [references/outcome-metrics.md](references/outcome-metrics.md) and initialize its durable skill-use record before dispatching work. Metrics persistence is authorized by this skill and remains outside the repository and its worktrees.
+At invocation, read [references/outcome-metrics.md](references/outcome-metrics.md) and initialize its durable skill-use record with `scripts/append_metric.py` before dispatching work. Use the helper for every metrics append so it can enforce the schema and add event timestamps. Metrics persistence is authorized by this skill and remains outside the repository and its worktrees.
 
 Repeat this loop until the whole goal is verified:
 
@@ -117,7 +155,7 @@ Repeat this loop until the whole goal is verified:
 2. **Research.** Select the smallest uncertainty that unlocks valuable work. Dispatch a Sol writer only when the dispatch test passes; otherwise research in the main thread. Stop early on a precise `NO-GO` or `PREREQUISITE`.
 3. **Shape.** Resolve Consequential Decisions in the main thread and choose one dependency-ready outcome. Select its Luna profile from [references/task-packets.md](references/task-packets.md).
 4. **Dispatch.** Recheck the task fingerprint; treat changed facts, decisions, ownership, constraints, or checks as material drift requiring re-adjudication. Reserve mutation ownership, verify the current runtime route, and send only worker-facing contract content.
-5. **Integrate.** Review scope and evidence, run proportionate independent verification, integrate or reject the result, close the execution worker, and update the ledger. Retain one writer through the next framing checkpoint only when a same-domain use is named; otherwise close it.
+5. **Integrate.** Review scope and evidence, run proportionate independent verification, integrate or reject the result, close the execution worker, and update the durable ledger. Retain one writer automatically when the reuse rule above applies; otherwise close it.
 6. **Review-converge and deliver.** Apply the selected delivery mode, then run its local gate, hosted gate, and merge requirements from [references/review-convergence.md](references/review-convergence.md). Feed accepted findings back through Shape, Dispatch, and Integrate. Never skip a required gate or infer cleanliness after a changed head.
 7. **Replan or finish.** Feed findings back into the roadmap. Continue from step 2 while required work remains; otherwise run the final goal gate.
 
@@ -125,15 +163,15 @@ Do not stop because an initial roadmap, one writer assignment, one Luna handoff,
 
 ## Research and response economy
 
-For Sol assignment formats, optional depth-one read-only researchers, and Luna Compact/Full contracts, read [references/task-packets.md](references/task-packets.md) when preparing a dispatch.
+For Sol assignment formats, bounded depth-one read-only researchers, and Luna Compact/Full contracts, read [references/task-packets.md](references/task-packets.md) when preparing a dispatch.
 
 Apply these rules before loading that reference:
 
 - Shape only the next ready task and at most one provisional successor unless stable independent outcomes justify fanout.
 - Start research with a viability scan. Return immediately on `NO-GO` or `PREREQUISITE`; use final `GO` only when the requested result is ready.
-- Let a contract writer use a research child only under an explicit depth-one budget and only when the child can answer a small read-only question without inheriting most of the writer's context.
+- Let a contract writer use a research child only under a depth-one budget recorded in its task packet and only when the child can answer a small read-only question without inheriting most of the writer's context. The orchestrator may grant this internal budget when the dispatch test passes; it does not require another user request.
 - Require the shortest sufficient response, not an arbitrary bullet count. Preserve decision-critical nuance while excluding repeated facts and exploratory history.
-- Use a shared session artifact for necessary long detail only when explicitly authorized and available. Never write into the user's repository merely to shorten a handoff.
+- When necessary detail cannot be distilled safely, use an available bounded session artifact or `~/.codex/subagent-artifacts/scale-sol-luna-goals/<repository-id>/<skill-use-id>/`. Invoking the skill authorizes redacted, reconstructible artifacts at that external path. Record the pointer in goal state. Never write into the user's repository merely to shorten a handoff.
 
 ## Verification and recovery
 
@@ -149,4 +187,4 @@ Before any model-specific dispatch, read [references/runtime-routing.md](referen
 
 At each named review checkpoint, assess assumptions, confidence, risks, rework, duplicated research, verification cost, and whether the roadmap still reflects integrated evidence. When a fix repeatedly reopens the same Failure Domain or expands its dependent failure surface, stop patch fanout and reframe that domain before dispatching more Luna work.
 
-Before final signoff, verify the actual goal criteria, required retirement accounting, final integration checks, absence of unresolved required work, and the selected delivery mode's terminal state. Default completion requires the reviewed green head to be merged. No-PR completion requires a clean current local gate. No-merge completion requires a clean current local gate, clean exact-head hosted review, green required CI, and no unresolved review threads. Complete the current skill-use record, including null, negative, ambiguous, and unavailable observations.
+Before final signoff, verify the actual goal criteria, required retirement accounting, final integration checks, absence of unresolved required work, and the selected delivery mode's terminal state. Default completion requires the reviewed green head to be merged. No-PR completion requires a clean current local gate. No-merge completion requires a clean current local gate, clean exact-head hosted review, green required CI, and no unresolved review threads. Complete the current skill-use record, update the durable goal snapshot, run `scripts/summarize_metrics.py`, and report the measured review-step summary, including unavailable timing. Do not require the user to ask for metrics analysis.

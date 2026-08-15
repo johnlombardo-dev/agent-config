@@ -1,6 +1,6 @@
 ---
 name: unslop
-description: Cut AI tells from any writing. Must always apply.
+description: Improve existing general prose by removing AI writing patterns and recovering a natural human voice. Use only when the user explicitly invokes $unslop or asks to remove AI tells or slop from existing copy. Do not invoke for ordinary questions, new writing, routine edits, or agent responses.
 ---
 
 # Unslop

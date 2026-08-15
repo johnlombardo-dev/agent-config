@@ -28,7 +28,7 @@ RETURN: GO, NO-GO, or PREREQUISITE; decision delta, evidence/confidence, next co
 
 `PRIOR` never substitutes for current `STATE`, `AUTHORITY`, `STOP`, or `RETURN`. A resumed writer receives a new assignment and may rely only on the selected findings after the required revalidation.
 
-The orchestrator dispatches contract writers. A contract writer using the review-phase `xhigh` profile may dispatch the required local reviewer only under the review schema below. A writer may separately dispatch a research child only when the assignment explicitly grants it and:
+The orchestrator dispatches contract writers. A contract writer using the review-phase `xhigh` profile may dispatch the required local reviewer only under the review schema below. A writer may separately dispatch a research child when the orchestrator records a depth-one budget in the assignment. This is internal assignment scope, not a separate user-authorization gate. Require all of the following:
 
 - The child owns one objectively answerable, read-only question.
 - The child makes no decision, writes no contract or implementation, and cannot dispatch another agent.
@@ -36,11 +36,11 @@ The orchestrator dispatches contract writers. A contract writer using the review
 - One child is preferred; fanout requires independent questions and non-duplicated evidence ownership.
 - The writer owns synthesis and returns only the decision-relevant result and evidence pointer.
 
-Return the shortest sufficient response. Include technical detail that affects a decision; omit raw logs, source digests, dead ends, and repeated accepted facts. Put necessary long analysis in an explicitly authorized shared session artifact, never an unrequested repository file.
+Return the shortest sufficient response. Include technical detail that affects a decision; omit raw logs, source digests, dead ends, and repeated accepted facts. Put necessary long analysis in the external artifact path authorized by the parent skill, never in an unrequested repository file.
 
 ## Retained writers and evidence review
 
-Keep this optional retained-writer entry in the parent goal ledger, not in the writer prompt:
+Keep this retained-writer entry in the parent goal ledger whenever the parent reuse rule retains a writer. Do not put it in the writer prompt:
 
 ```text
 RETAINED: writer ID and domain; last task/state fingerprint; selected evidence pointer and invalidation trigger; one anticipated next use
@@ -58,17 +58,17 @@ Use this schema only for a cycle governed by [review-convergence.md](review-conv
 STAGE: local or hosted-pr; cycle ID; exact base and head; review source
 SOURCE: local merge target and head, or hosted PR/review pointer and exact reviewed head
 STATE: relevant fingerprint, accepted decisions, prior cycle delta, owned dirty state, and known checks
-AUTHORITY: governing sources and precedence; repository read scope; mutation limited to one external JSONL stack
+AUTHORITY: governing sources and precedence; repository read scope; mutation limited to review events in one external invocation log
 REVIEWER CHILD: local requires one fresh Sol xhigh child using review-agent; hosted-pr normally none because the writer reads the hosted source directly
 NESTED RESEARCH: none, or depth 1 plus child count, exact question/read scope, capability, and cost limit
-STACK: assigned path, prior tail fingerprint, and append-only entry types permitted
+RECORD: canonical repository ID, skill-use ID, stage, append_metric.py path, role=writer, prior tail fingerprint, and append-only entry types permitted
 STOP: stale head, incomplete findings, authority conflict, consequential decision, unsafe ownership overlap, or unavailable exact route
-RETURN: GO, NO-GO, or PREREQUISITE; normalized finding index and dispositions; proposed Luna contracts; dependency/conflict graph; manifest; residual risks; stack pointer
+RETURN: GO, NO-GO, or PREREQUISITE; normalized finding index and dispositions; proposed Luna contracts; dependency/conflict graph; manifest; residual risks; invocation-log pointer
 ```
 
 For a local cycle, require the writer to spawn a fresh reviewer with only the exact review target, applicable instructions, and the `review-agent` skill. The reviewer cannot inherit candidate dispositions or prior review conclusions. For a hosted cycle, give the writer the PR and exact-head review pointer; the writer reads every actionable hosted finding directly. Use research children only when the existing dispatch test makes them Worth.
 
-Normalize and append every finding before shaping contracts. The writer must then examine related findings, combine those that share an inseparable Failure Domain, and split those with independently acceptable mutation and rollback surfaces. Every proposed contract must use the Luna Compact or Full schema below and name finding IDs, dependencies, conflicts, mutation ownership, checks, and a split trigger. Persistence records candidate dispositions and proposals, not acceptance. The orchestrator accepts, rejects, schedules, and appends state transitions.
+Normalize and append every finding before shaping contracts. The writer must then examine related findings, combine those that share an inseparable Failure Domain, and split those with independently acceptable mutation and rollback surfaces. Every proposed contract must use the Luna Compact or Full schema below and name finding IDs, dependencies, conflicts, mutation ownership, checks, and a split trigger. Persisted writer events record candidate dispositions and proposals, not acceptance. The orchestrator accepts, rejects, schedules, and appends state transitions.
 
 ## Luna contract selection
 
