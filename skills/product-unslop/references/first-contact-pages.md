@@ -1,6 +1,6 @@
 # First-contact pages
 
-Help a new reader identify the product, decide whether it fits, and choose a next step.
+Help a new reader understand what the product is, decide whether it fits, and choose what to do next.
 
 ## Information order
 
@@ -11,13 +11,13 @@ Help a new reader identify the product, decide whether it fits, and choose a nex
 5. Introduce the essential product model.
 6. Move architecture, contracts, schema names, and debug details into later sections.
 
-Do not assume that a visitor knows internal terminology or has read another page.
+Do not assume visitors know internal terms or have read another page.
 
 ## Page elements
 
 - Use the eyebrow for scope, domain, or audience. Do not use it for slogans or unexplained taxonomies.
-- Make the headline understandable in isolation. Name the category instead of relying on an evocative phrase.
-- Make the subhead add product behavior, audience, or a meaningful constraint. Do not restate the headline.
+- Make the headline understandable by itself. Name the category instead of relying on an evocative phrase.
+- Use the subhead to add product behavior, audience, or a meaningful constraint. Do not restate the headline.
 - Pair each new product term with what it does, where the user encounters it, and why it affects their work.
 - Prefer short, question-led sections when the reader needs progressive disclosure.
 - Label unfinished capabilities as `Available`, `Partial`, or `Planned` when the distinction affects a reader's decision.
@@ -31,7 +31,7 @@ Present a small number of actions in the order the reader is ready to take them:
 3. Install or integrate it.
 4. Open detailed reference documentation.
 
-Do not present four actions as equally primary. Explain enough of the product before asking the reader to commit to installation or integration.
+Do not present all four actions as equally primary. Explain enough of the product before asking the reader to install or integrate it.
 
 ## Audit
 
@@ -39,4 +39,4 @@ Do not present four actions as equally primary. Explain enough of the product be
 - Does the page state who benefits and what they can do?
 - Does each claimed benefit have a mechanism or example?
 - Does the primary action match the reader's current level of understanding?
-- Can any heading or paragraph be deleted without losing information or a useful action? Delete it.
+- Does every heading and paragraph add information or a useful action? Delete any that does not.
