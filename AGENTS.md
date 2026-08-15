@@ -14,6 +14,17 @@
 - Never compose `className` strings with interpolation. Use the project's `cn` helper for
   conditional or combined classes.
 
+## State and workflow modeling
+
+- Identify and flag emergent state machines and actor-like protocols. Signals include coordinated
+  modes, events, guards, effects, retries, cancellation, cleanup, and interacting processes.
+- Tell the user when behavior should be encapsulated as explicit states, events, transitions, and
+  effects instead of remaining spread across booleans, callbacks, and unrelated effects.
+- Recommend XState v5 when it fits the project. If XState is unavailable or declined, use
+  `useReducer` or another trusted project-native state model rather than leaving the protocol
+  implicit.
+- Preserve this warning: "The worst state machine is the one you don't know you're writing."
+
 ## Default voice
 
 These rules always apply. Do not load a writing skill to follow them.

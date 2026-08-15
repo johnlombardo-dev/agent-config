@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "D-VALUE-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "value-integrity",
+      "project": "picodash",
+      "packet": "packets/discovery-value-development.md"
+    },
+    {
+      "id": "D-A11Y-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "accessibility-interaction",
+      "project": "picodash",
+      "packet": "packets/discovery-accessibility-development.md"
+    },
+    {
+      "id": "D-CONTRACT-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "public-contract",
+      "project": "picodash",
+      "packet": "packets/discovery-contract-development.md"
+    },
+    {
+      "id": "D-LIFECYCLE-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "lifecycle-rendering",
+      "project": "picodash",
+      "packet": "packets/discovery-lifecycle-development.md"
+    },
+    {
+      "id": "D-VALUE-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "value-integrity",
+      "project": "picodash",
+      "packet": "packets/discovery-value-holdout.md"
+    },
+    {
+      "id": "D-A11Y-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "accessibility-interaction",
+      "project": "picodash",
+      "packet": "packets/discovery-accessibility-holdout.md"
+    },
+    {
+      "id": "D-CONTRACT-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "public-contract",
+      "project": "generic-react-typescript",
+      "packet": "packets/discovery-contract-holdout.md"
+    },
+    {
+      "id": "D-LIFECYCLE-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "lifecycle-rendering",
+      "project": "generic-react-typescript",
+      "packet": "packets/discovery-lifecycle-holdout.md"
+    },
+    {
+      "id": "D-CONTROL-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "control",
+      "project": "generic-react-typescript",
+      "packet": "packets/discovery-control-development.md"
+    },
+    {
+      "id": "D-CONTROL-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "control",
+      "project": "picodash",
+      "packet": "packets/discovery-control-holdout.md"
+    },
+    {
+      "id": "R-VALUE-DEV",
+      "kind": "repair",
+      "split": "development",
+      "lane": "value-integrity",
+      "project": "picodash",
+      "packet": "packets/repair-value-development.md"
+    },
+    {
+      "id": "R-A11Y-DEV",
+      "kind": "repair",
+      "split": "development",
+      "lane": "accessibility-interaction",
+      "project": "picodash",
+      "packet": "packets/repair-accessibility-development.md"
+    },
+    {
+      "id": "R-VALUE-HOLDOUT",
+      "kind": "repair",
+      "split": "holdout",
+      "lane": "value-integrity",
+      "project": "generic-react-typescript",
+      "packet": "packets/repair-value-holdout.md"
+    },
+    {
+      "id": "R-A11Y-HOLDOUT",
+      "kind": "repair",
+      "split": "holdout",
+      "lane": "accessibility-interaction",
+      "project": "picodash",
+      "packet": "packets/repair-accessibility-holdout.md"
+    },
+    {
+      "id": "R-CONTRACT-HOLDOUT",
+      "kind": "repair",
+      "split": "holdout",
+      "lane": "public-contract",
+      "project": "generic-react-typescript",
+      "packet": "packets/repair-contract-holdout.md"
+    },
+    {
+      "id": "R-LIFECYCLE-HOLDOUT",
+      "kind": "repair",
+      "split": "holdout",
+      "lane": "lifecycle-rendering",
+      "project": "picodash",
+      "packet": "packets/repair-lifecycle-holdout.md"
+    },
+    {
+      "id": "R-CONTROL-HOLDOUT",
+      "kind": "repair",
+      "split": "holdout",
+      "lane": "control",
+      "project": "generic-react-typescript",
+      "packet": "packets/repair-control-holdout.md"
+    }
+  ]
+}

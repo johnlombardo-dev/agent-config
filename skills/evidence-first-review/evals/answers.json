@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "answers": {
+    "D-VALUE-DEV": {
+      "findings": [
+        {
+          "id": "F-D-VALUE-DEV-1",
+          "severity": "P2",
+          "defect_class": "silent-controlled-normalization"
+        },
+        {
+          "id": "F-D-VALUE-DEV-2",
+          "severity": "P2",
+          "defect_class": "invalid-draft-coercion"
+        }
+      ]
+    },
+    "D-A11Y-DEV": {
+      "findings": [
+        {
+          "id": "F-D-A11Y-DEV-1",
+          "severity": "P2",
+          "defect_class": "focusable-readonly-target-uncommunicated"
+        }
+      ]
+    },
+    "D-CONTRACT-DEV": {
+      "findings": [
+        {
+          "id": "F-D-CONTRACT-DEV-1",
+          "severity": "P2",
+          "defect_class": "component-props-domain-erasure"
+        }
+      ]
+    },
+    "D-LIFECYCLE-DEV": {
+      "findings": [
+        {
+          "id": "F-D-LIFECYCLE-DEV-1",
+          "severity": "P2",
+          "defect_class": "caller-ref-overwritten"
+        }
+      ]
+    },
+    "D-VALUE-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-D-VALUE-HOLDOUT-1",
+          "severity": "P2",
+          "defect_class": "unavailable-controlled-value-loss"
+        }
+      ]
+    },
+    "D-A11Y-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-D-A11Y-HOLDOUT-1",
+          "severity": "P1",
+          "defect_class": "nested-overlay-under-parent"
+        }
+      ]
+    },
+    "D-CONTRACT-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-D-CONTRACT-HOLDOUT-1",
+          "severity": "P2",
+          "defect_class": "controlled-prop-authority-leak"
+        }
+      ]
+    },
+    "D-LIFECYCLE-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-D-LIFECYCLE-HOLDOUT-1",
+          "severity": "P2",
+          "defect_class": "subscription-before-first-observation"
+        },
+        {
+          "id": "F-D-LIFECYCLE-HOLDOUT-2",
+          "severity": "P2",
+          "defect_class": "document-visibility-not-tracked"
+        }
+      ]
+    },
+    "D-CONTROL-DEV": {
+      "findings": []
+    },
+    "D-CONTROL-HOLDOUT": {
+      "findings": []
+    },
+    "R-VALUE-DEV": {
+      "findings": [
+        {
+          "id": "F-R-VALUE-DEV-1",
+          "severity": "P2",
+          "defect_class": "repair-suppresses-first-user-edit"
+        }
+      ]
+    },
+    "R-A11Y-DEV": {
+      "findings": [
+        {
+          "id": "F-R-A11Y-DEV-1",
+          "severity": "P2",
+          "defect_class": "repair-describes-wrapper-not-focus-target"
+        }
+      ]
+    },
+    "R-VALUE-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-R-VALUE-HOLDOUT-1",
+          "severity": "P2",
+          "defect_class": "repair-collapses-typed-choice-identity"
+        }
+      ]
+    },
+    "R-A11Y-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-R-A11Y-HOLDOUT-1",
+          "severity": "P1",
+          "defect_class": "repair-freezes-panel-stacking"
+        }
+      ]
+    },
+    "R-CONTRACT-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-R-CONTRACT-HOLDOUT-1",
+          "severity": "P2",
+          "defect_class": "repair-breaks-unspecialized-construction"
+        }
+      ]
+    },
+    "R-LIFECYCLE-HOLDOUT": {
+      "findings": [
+        {
+          "id": "F-R-LIFECYCLE-HOLDOUT-1",
+          "severity": "P2",
+          "defect_class": "repair-keeps-ambient-observer-realm"
+        },
+        {
+          "id": "F-R-LIFECYCLE-HOLDOUT-2",
+          "severity": "P2",
+          "defect_class": "repair-skips-initial-visibility-sync"
+        }
+      ]
+    },
+    "R-CONTROL-HOLDOUT": {
+      "findings": []
+    }
+  }
+}
