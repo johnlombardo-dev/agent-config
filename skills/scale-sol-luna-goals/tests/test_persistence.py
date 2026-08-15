@@ -65,7 +65,7 @@ class InvocationLogTests(unittest.TestCase):
         )
         return json.loads(result.stdout)
 
-    def test_metrics_and_review_events_share_one_timestamped_log(self) -> None:
+    def test_legacy_review_events_remain_readable_in_the_invocation_log(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             started = self.append(
@@ -101,7 +101,7 @@ class InvocationLogTests(unittest.TestCase):
             self.assertIn("created_at", started)
             self.assertIn("created_at", finding)
 
-    def test_writer_cannot_append_an_orchestrator_decision(self) -> None:
+    def test_legacy_writer_role_cannot_append_an_orchestrator_decision(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             result = subprocess.run(
                 [
