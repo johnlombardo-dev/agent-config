@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append one canonical scale-sol-luna-goals invocation event from stdin."""
+"""Append one validated SSLG invocation metric from stdin."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ import argparse
 import fcntl
 import json
 import os
-import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,35 +15,29 @@ from typing import Any
 from path_conventions import canonical_record_id, canonical_repository_id
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DEFAULT_ROOT = Path.home() / ".codex" / "subagent-metrics" / "scale-sol-luna-goals"
-ALLOWED_TYPES = {
-    "assignment_outcome",
-    "comparison_started",
-    "review_contract_proposed",
-    "review_contract_result",
-    "review_cycle_outcome",
-    "review_cycle_observed",
-    "review_cycle_started",
-    "review_decision",
-    "review_finding",
-    "review_step_finished",
-    "review_step_started",
-    "use_checkpoint",
-    "use_outcome",
-    "use_started",
+PAYLOAD_FIELDS = {
+    "use_started": {"type", "goal_id", "start_fingerprint"},
+    "use_outcome": {
+        "type",
+        "status",
+        "failed_criteria",
+        "end_fingerprint",
+        "total_goal_tokens",
+        "token_measurement",
+    },
 }
-WRITER_TYPES = {"review_contract_proposed", "review_cycle_observed", "review_finding"}
-ORCHESTRATOR_TYPES = ALLOWED_TYPES.difference(WRITER_TYPES)
-REVIEW_EVENT_TYPES = {
-    "review_contract_proposed",
-    "review_contract_result",
-    "review_cycle_observed",
-    "review_decision",
-    "review_finding",
+GENERATED_FIELDS = {
+    "schema_version",
+    "created_at",
+    "repository_id",
+    "skill_use_id",
+    "started_at",
+    "completed_at",
+    "elapsed_ms",
+    "timing_status",
 }
-ENVELOPE_KEYS = {"schema_version", "created_at", "repository_id", "skill_use_id"}
-SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 def fail(message: str) -> None:
@@ -71,27 +64,79 @@ def parse_time(value: Any, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def read_payload(role: str) -> dict[str, Any]:
+def require_non_empty_string(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        fail(f"{field} must be a non-empty string")
+    return value
+
+
+def validate_failed_criteria(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        fail("failed_criteria must be an array of unique non-empty strings")
+    result: list[str] = []
+    for item in value:
+        result.append(require_non_empty_string(item, "failed_criteria item"))
+    if len(result) != len(set(result)):
+        fail("failed_criteria must not contain duplicates")
+    return result
+
+
+def validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    record_type = payload.get("type")
+    if record_type not in PAYLOAD_FIELDS:
+        fail(f"unsupported metric type: {record_type!r}")
+
+    forbidden = GENERATED_FIELDS.intersection(payload)
+    if forbidden:
+        fail(f"the append helper owns these fields: {', '.join(sorted(forbidden))}")
+
+    expected = PAYLOAD_FIELDS[record_type]
+    missing = expected.difference(payload)
+    unknown = set(payload).difference(expected)
+    if missing:
+        fail(f"{record_type} is missing fields: {', '.join(sorted(missing))}")
+    if unknown:
+        fail(f"{record_type} has unknown fields: {', '.join(sorted(unknown))}")
+
+    if record_type == "use_started":
+        goal_id = require_non_empty_string(payload["goal_id"], "goal_id")
+        try:
+            payload["goal_id"] = canonical_record_id(goal_id, "goal_id")
+        except ValueError as error:
+            fail(str(error))
+        require_non_empty_string(payload["start_fingerprint"], "start_fingerprint")
+        return payload
+
+    status = payload["status"]
+    if status not in {"success", "failure", "blocked"}:
+        fail("status must be success, failure, or blocked")
+    failed_criteria = validate_failed_criteria(payload["failed_criteria"])
+    if status == "success" and failed_criteria:
+        fail("failed_criteria must be empty when status is success")
+    if status == "failure" and not failed_criteria:
+        fail("failed_criteria must name at least one check when status is failure")
+    require_non_empty_string(payload["end_fingerprint"], "end_fingerprint")
+
+    tokens = payload["total_goal_tokens"]
+    measurement = payload["token_measurement"]
+    measured_tokens = isinstance(tokens, int) and not isinstance(tokens, bool) and tokens >= 0
+    if measurement == "runtime" and not measured_tokens:
+        fail("runtime token measurement requires a non-negative integer total_goal_tokens")
+    if measurement == "unavailable" and tokens is not None:
+        fail("unavailable token measurement requires total_goal_tokens to be null")
+    if measurement not in {"runtime", "unavailable"}:
+        fail("token_measurement must be runtime or unavailable")
+    return payload
+
+
+def read_payload() -> dict[str, Any]:
     try:
         payload = json.load(sys.stdin)
     except json.JSONDecodeError as error:
         fail(f"stdin must contain one JSON object: {error}")
     if not isinstance(payload, dict):
         fail("stdin must contain one JSON object")
-    forbidden = ENVELOPE_KEYS.intersection(payload)
-    if forbidden:
-        fail(f"the append helper owns these fields: {', '.join(sorted(forbidden))}")
-    invalid_keys = [key for key in payload if not SNAKE_CASE.fullmatch(key)]
-    if invalid_keys:
-        fail(f"top-level fields must use snake_case: {', '.join(sorted(invalid_keys))}")
-    record_type = payload.get("type")
-    permitted_types = WRITER_TYPES if role == "writer" else ORCHESTRATOR_TYPES
-    if record_type not in permitted_types:
-        fail(f"role {role!r} cannot append type {record_type!r}")
-    if record_type in REVIEW_EVENT_TYPES:
-        if payload.get("stage") not in {"local", "hosted-pr"}:
-            fail(f"{record_type} requires stage local or hosted-pr")
-    return payload
+    return validate_payload(payload)
 
 
 def load_records(handle: Any) -> list[dict[str, Any]]:
@@ -104,23 +149,29 @@ def load_records(handle: Any) -> list[dict[str, Any]]:
             record = json.loads(line)
         except json.JSONDecodeError as error:
             fail(f"existing JSONL is invalid at line {line_number}: {error}")
-        if isinstance(record, dict):
-            records.append(record)
+        if not isinstance(record, dict):
+            fail(f"existing JSONL line {line_number} must be an object")
+        records.append(record)
     return records
 
 
-def find_start(
+def validate_log_state(
     records: list[dict[str, Any]],
-    start_type: str,
-    identity: dict[str, Any],
-) -> dict[str, Any]:
-    for record in reversed(records):
-        if record.get("type") != start_type:
-            continue
-        if all(record.get(key) == value for key, value in identity.items()):
-            return record
-    formatted = ", ".join(f"{key}={value!r}" for key, value in identity.items())
-    fail(f"missing {start_type} record for {formatted}")
+    repository_id: str,
+    skill_use_id: str,
+) -> None:
+    expected_types = ["use_started", "use_outcome"]
+    if len(records) > len(expected_types):
+        fail("metrics log already contains more than two records")
+    for index, record in enumerate(records):
+        if record.get("schema_version") != SCHEMA_VERSION:
+            fail("existing metrics log uses an unsupported schema version")
+        if record.get("repository_id") != repository_id:
+            fail("existing metrics log has a different repository_id")
+        if record.get("skill_use_id") != skill_use_id:
+            fail("existing metrics log has a different skill_use_id")
+        if record.get("type") != expected_types[index]:
+            fail("existing metrics log is out of order")
 
 
 def add_timing(
@@ -128,43 +179,17 @@ def add_timing(
     records: list[dict[str, Any]],
     now: datetime,
 ) -> None:
-    record_type = payload["type"]
-    start_types = {
-        "comparison_started",
-        "review_cycle_started",
-        "review_step_started",
-        "use_started",
-    }
-    if record_type in start_types:
-        if "started_at" in payload:
-            fail("the append helper owns started_at for start events")
+    if payload["type"] == "use_started":
+        if records:
+            fail("use_started already exists for this skill_use_id")
         payload["started_at"] = format_time(now)
         return
 
-    start_type: str | None = None
-    identity: dict[str, Any] = {}
-    if record_type == "use_outcome":
-        start_type = "use_started"
-    elif record_type == "review_cycle_outcome":
-        start_type = "review_cycle_started"
-        identity = {"cycle_id": payload.get("cycle_id")}
-    elif record_type == "review_step_finished":
-        start_type = "review_step_started"
-        identity = {
-            "cycle_id": payload.get("cycle_id"),
-            "step_id": payload.get("step_id"),
-        }
-
-    if start_type is None:
-        return
-    if any(value is None for value in identity.values()):
-        fail(f"{record_type} is missing its correlation identifier")
-    for field in ("started_at", "completed_at", "elapsed_ms", "timing_status"):
-        if field in payload:
-            fail(f"the append helper owns {field} for {record_type}")
-    start = find_start(records, start_type, identity)
-    started_at = parse_time(start.get("started_at"), "started_at")
-    payload["started_at"] = format_time(started_at)
+    if not records:
+        fail("use_outcome requires an existing use_started record")
+    if len(records) != 1:
+        fail("use_outcome already exists for this skill_use_id")
+    started_at = parse_time(records[0].get("started_at"), "started_at")
     payload["completed_at"] = format_time(now)
     payload["elapsed_ms"] = max(0, round((now - started_at).total_seconds() * 1000))
     payload["timing_status"] = "measured"
@@ -172,11 +197,10 @@ def add_timing(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Append one canonical scale-sol-luna-goals invocation event from stdin."
+        description="Append one validated SSLG invocation metric from stdin."
     )
     parser.add_argument("--repository-id", required=True)
     parser.add_argument("--skill-use-id", required=True)
-    parser.add_argument("--role", choices=("orchestrator", "writer"), default="orchestrator")
     parser.add_argument("--root", type=Path, default=DEFAULT_ROOT, help=argparse.SUPPRESS)
     return parser.parse_args()
 
@@ -185,13 +209,10 @@ def main() -> None:
     args = parse_args()
     try:
         repository_id = canonical_repository_id(args.repository_id)
-    except ValueError as error:
-        fail(str(error))
-    try:
         skill_use_id = canonical_record_id(args.skill_use_id, "skill_use_id")
     except ValueError as error:
         fail(str(error))
-    payload = read_payload(args.role)
+    payload = read_payload()
 
     record_path = args.root.expanduser() / repository_id / f"{skill_use_id}.jsonl"
     record_path.parent.mkdir(parents=True, exist_ok=True)
@@ -200,6 +221,7 @@ def main() -> None:
     with record_path.open("a+", encoding="utf-8") as handle:
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
         records = load_records(handle)
+        validate_log_state(records, repository_id, skill_use_id)
         add_timing(payload, records, now)
         record = {
             "schema_version": SCHEMA_VERSION,

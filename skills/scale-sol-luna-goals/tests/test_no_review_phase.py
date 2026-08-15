@@ -37,7 +37,8 @@ class NoReviewPhaseTests(unittest.TestCase):
 
         self.assertIn("SSLG has no code-review phase", delivery)
         self.assertIn("Do not request code review", delivery)
-        self.assertIn("Current SSLG does not emit them", metrics)
+        self.assertIn("Record exactly two events", metrics)
+        self.assertIn("Do not record assignment outcomes", metrics)
 
     def test_pre_delivery_qa_keeps_the_four_risk_classes(self) -> None:
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")

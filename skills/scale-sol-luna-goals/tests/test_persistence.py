@@ -38,14 +38,12 @@ class RepositoryIdentityTests(unittest.TestCase):
 
 
 class InvocationLogTests(unittest.TestCase):
-    def append(
+    def append_result(
         self,
         root: Path,
         payload: dict[str, object],
-        *,
-        role: str = "orchestrator",
-    ) -> dict[str, object]:
-        result = subprocess.run(
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
             [
                 sys.executable,
                 str(SCRIPTS / "append_metric.py"),
@@ -53,75 +51,230 @@ class InvocationLogTests(unittest.TestCase):
                 "github.com/example/project",
                 "--skill-use-id",
                 "use-1",
-                "--role",
-                role,
                 "--root",
                 str(root),
             ],
             input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+        )
+
+    def append(self, root: Path, payload: dict[str, object]) -> dict[str, object]:
+        result = self.append_result(root, payload)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def summarize(self, root: Path) -> dict[str, object]:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS / "summarize_metrics.py"),
+                "--repository-id",
+                "github.com/example/project",
+                "--skill-use-id",
+                "use-1",
+                "--root",
+                str(root),
+            ],
             check=True,
             capture_output=True,
             text=True,
         )
         return json.loads(result.stdout)
 
-    def test_legacy_review_events_remain_readable_in_the_invocation_log(self) -> None:
+    def start(self, root: Path) -> dict[str, object]:
+        return self.append(
+            root,
+            {
+                "type": "use_started",
+                "goal_id": "goal-1",
+                "start_fingerprint": "head-1 clean",
+            },
+        )
+
+    def outcome(
+        self,
+        root: Path,
+        *,
+        status: str = "success",
+        failed_criteria: list[str] | None = None,
+        tokens: int | None = 1234,
+        measurement: str = "runtime",
+    ) -> dict[str, object]:
+        return self.append(
+            root,
+            {
+                "type": "use_outcome",
+                "status": status,
+                "failed_criteria": failed_criteria or [],
+                "end_fingerprint": "head-2 clean",
+                "total_goal_tokens": tokens,
+                "token_measurement": measurement,
+            },
+        )
+
+    def test_records_only_start_and_terminal_whole_goal_metrics(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            started = self.append(
+            started = self.start(root)
+            outcome = self.outcome(
                 root,
-                {
-                    "type": "use_started",
-                    "goal_id": "goal-1",
-                    "continuation_of": None,
-                    "start_fingerprint": "head-1",
-                    "completion_criteria": ["done"],
-                },
-            )
-            finding = self.append(
-                root,
-                {
-                    "type": "review_finding",
-                    "stage": "local",
-                    "finding_id": "finding-1",
-                    "cycle_id": "local-1",
-                    "severity": "P2",
-                    "title": "Example",
-                },
-                role="writer",
+                status="failure",
+                failed_criteria=["criterion-2"],
             )
 
             record_path = root / "github.com/example/project/use-1.jsonl"
             records = [json.loads(line) for line in record_path.read_text().splitlines()]
-            self.assertEqual(
-                [record["type"] for record in records],
-                ["use_started", "review_finding"],
-            )
-            self.assertEqual(started["repository_id"], "github.com/example/project")
-            self.assertIn("created_at", started)
-            self.assertIn("created_at", finding)
+            self.assertEqual([record["type"] for record in records], ["use_started", "use_outcome"])
+            self.assertEqual(started["schema_version"], 2)
+            self.assertIn("started_at", started)
+            self.assertEqual(outcome["total_goal_tokens"], 1234)
+            self.assertIsInstance(outcome["elapsed_ms"], int)
 
-    def test_legacy_writer_role_cannot_append_an_orchestrator_decision(self) -> None:
+            summary = self.summarize(root)
+            self.assertEqual(summary["status"], "failure")
+            self.assertEqual(summary["failed_criteria"], ["criterion-2"])
+            self.assertEqual(summary["total_goal_tokens"], 1234)
+            self.assertEqual(summary["token_measurement"], "runtime")
+
+    def test_unavailable_tokens_are_explicit(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    str(SCRIPTS / "append_metric.py"),
-                    "--repository-id",
-                    "github.com/example/project",
-                    "--skill-use-id",
-                    "use-1",
-                    "--role",
-                    "writer",
-                    "--root",
-                    directory,
-                ],
-                input='{"type":"review_decision","stage":"local"}',
-                capture_output=True,
-                text=True,
+            root = Path(directory)
+            self.start(root)
+            self.outcome(root, tokens=None, measurement="unavailable")
+            summary = self.summarize(root)
+            self.assertIsNone(summary["total_goal_tokens"])
+            self.assertEqual(summary["token_measurement"], "unavailable")
+
+    def test_active_summary_does_not_invent_an_outcome(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.start(root)
+            summary = self.summarize(root)
+            self.assertEqual(summary["status"], "active")
+            self.assertIsNone(summary["elapsed_ms"])
+            self.assertIsNone(summary["total_goal_tokens"])
+            self.assertIsNone(summary["token_measurement"])
+
+    def test_invalid_or_extra_fields_are_rejected(self) -> None:
+        invalid_payloads = (
+            {"type": "assignment_outcome"},
+            {
+                "type": "use_started",
+                "goal_id": "goal-1",
+                "start_fingerprint": "head-1",
+                "observation": "extra",
+            },
+            {"type": "use_started", "goal_id": "goal-1"},
+            {
+                "type": "use_outcome",
+                "status": "success",
+                "failed_criteria": ["criterion-1"],
+                "end_fingerprint": "head-2",
+                "total_goal_tokens": 1,
+                "token_measurement": "runtime",
+            },
+            {
+                "type": "use_outcome",
+                "status": "failure",
+                "failed_criteria": [],
+                "end_fingerprint": "head-2",
+                "total_goal_tokens": 1,
+                "token_measurement": "runtime",
+            },
+            {
+                "type": "use_outcome",
+                "status": "failure",
+                "failed_criteria": ["criterion-1"],
+                "end_fingerprint": "head-2",
+                "total_goal_tokens": -1,
+                "token_measurement": "runtime",
+            },
+            {
+                "type": "use_outcome",
+                "status": "blocked",
+                "failed_criteria": [],
+                "end_fingerprint": "head-2",
+                "total_goal_tokens": 1,
+                "token_measurement": "unavailable",
+            },
+        )
+        for payload in invalid_payloads:
+            with self.subTest(payload=payload), tempfile.TemporaryDirectory() as directory:
+                result = self.append_result(Path(directory), payload)
+                self.assertNotEqual(result.returncode, 0)
+
+    def test_records_must_be_ordered_and_unique(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            missing_start = self.append_result(
+                root,
+                {
+                    "type": "use_outcome",
+                    "status": "blocked",
+                    "failed_criteria": [],
+                    "end_fingerprint": "head-1",
+                    "total_goal_tokens": None,
+                    "token_measurement": "unavailable",
+                },
+            )
+            self.assertNotEqual(missing_start.returncode, 0)
+
+            self.start(root)
+            duplicate_start = self.append_result(
+                root,
+                {
+                    "type": "use_started",
+                    "goal_id": "goal-1",
+                    "start_fingerprint": "head-1",
+                },
+            )
+            self.assertNotEqual(duplicate_start.returncode, 0)
+
+            self.outcome(root)
+            duplicate_outcome = self.append_result(
+                root,
+                {
+                    "type": "use_outcome",
+                    "status": "success",
+                    "failed_criteria": [],
+                    "end_fingerprint": "head-2",
+                    "total_goal_tokens": 1234,
+                    "token_measurement": "runtime",
+                },
+            )
+            self.assertNotEqual(duplicate_outcome.returncode, 0)
+
+    def test_legacy_schema_is_not_extended(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            record_path = root / "github.com/example/project/use-1.jsonl"
+            record_path.parent.mkdir(parents=True)
+            record_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "type": "use_started",
+                        "repository_id": "github.com/example/project",
+                        "skill_use_id": "use-1",
+                        "started_at": "2026-08-15T00:00:00.000Z",
+                    }
+                )
+                + "\n"
+            )
+            result = self.append_result(
+                root,
+                {
+                    "type": "use_outcome",
+                    "status": "blocked",
+                    "failed_criteria": [],
+                    "end_fingerprint": "head-1",
+                    "total_goal_tokens": None,
+                    "token_measurement": "unavailable",
+                },
             )
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("cannot append", result.stderr)
+            self.assertIn("unsupported schema", result.stderr)
 
 
 if __name__ == "__main__":

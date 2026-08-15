@@ -16,15 +16,15 @@ description: >-
 
 ## Normative ownership, terms, and precedence
 
-This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only assignment schemas and Luna profile selection. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [delivery reference](references/delivery.md) owns only Git, PR, CI, and merge mechanics. The [outcome-metrics reference](references/outcome-metrics.md) owns the canonical storage convention, required event records, routine summary, and named-comparison schema. References must not redefine this file's semantics.
+This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only assignment schemas and Luna profile selection. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [delivery reference](references/delivery.md) owns only Git, PR, CI, and merge mechanics. The [outcome-metrics reference](references/outcome-metrics.md) owns the two-record invocation schema and final summary. References must not redefine this file's semantics.
 
 ## Invocation contract
 
 Once invoked, this skill runs the complete goal lifecycle without requiring separate requests for its normal functions:
 
 - persist and maintain compact goal state;
-- record timestamped metrics and assignment outcomes;
-- summarize those metrics at framing checkpoints and final signoff;
+- record one timestamped start and one terminal outcome;
+- summarize whole-goal status, elapsed time, and total tokens at final signoff;
 - retain and reuse one same-domain writer when the reuse rule applies;
 - grant bounded depth-one research and external artifact scope when the dispatch rules require them;
 - execute the selected delivery mode through its terminal state.
