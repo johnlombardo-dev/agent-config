@@ -23,7 +23,7 @@ This file is the sole normative source for role authority, the terms below, disp
 Once invoked, this skill runs the complete goal lifecycle without requiring separate requests for its normal functions:
 
 - persist and maintain compact goal state;
-- record one timestamped start and one terminal outcome;
+- record one timestamped objective and one terminal result;
 - summarize whole-goal status, elapsed time, and total tokens at final signoff;
 - retain and reuse one same-domain writer when the reuse rule applies;
 - grant bounded depth-one research and external artifact scope when the dispatch rules require them;

@@ -18,10 +18,11 @@ from path_conventions import canonical_record_id, canonical_repository_id
 SCHEMA_VERSION = 2
 DEFAULT_ROOT = Path.home() / ".codex" / "subagent-metrics" / "scale-sol-luna-goals"
 PAYLOAD_FIELDS = {
-    "use_started": {"type", "goal_id", "start_fingerprint"},
+    "use_started": {"type", "goal_id", "objective", "start_fingerprint"},
     "use_outcome": {
         "type",
         "status",
+        "result",
         "failed_criteria",
         "end_fingerprint",
         "total_goal_tokens",
@@ -70,6 +71,13 @@ def require_non_empty_string(value: Any, field: str) -> str:
     return value
 
 
+def require_one_line_string(value: Any, field: str) -> str:
+    result = require_non_empty_string(value, field)
+    if "\n" in result or "\r" in result:
+        fail(f"{field} must be one line")
+    return result
+
+
 def validate_failed_criteria(value: Any) -> list[str]:
     if not isinstance(value, list):
         fail("failed_criteria must be an array of unique non-empty strings")
@@ -104,6 +112,7 @@ def validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
             payload["goal_id"] = canonical_record_id(goal_id, "goal_id")
         except ValueError as error:
             fail(str(error))
+        require_one_line_string(payload["objective"], "objective")
         require_non_empty_string(payload["start_fingerprint"], "start_fingerprint")
         return payload
 
@@ -115,6 +124,7 @@ def validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
         fail("failed_criteria must be empty when status is success")
     if status == "failure" and not failed_criteria:
         fail("failed_criteria must name at least one check when status is failure")
+    require_one_line_string(payload["result"], "result")
     require_non_empty_string(payload["end_fingerprint"], "end_fingerprint")
 
     tokens = payload["total_goal_tokens"]

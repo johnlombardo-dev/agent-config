@@ -88,6 +88,7 @@ class InvocationLogTests(unittest.TestCase):
             {
                 "type": "use_started",
                 "goal_id": "goal-1",
+                "objective": "Implement the plan.",
                 "start_fingerprint": "head-1 clean",
             },
         )
@@ -106,6 +107,7 @@ class InvocationLogTests(unittest.TestCase):
             {
                 "type": "use_outcome",
                 "status": status,
+                "result": "Implemented and verified the plan.",
                 "failed_criteria": failed_criteria or [],
                 "end_fingerprint": "head-2 clean",
                 "total_goal_tokens": tokens,
@@ -133,6 +135,8 @@ class InvocationLogTests(unittest.TestCase):
 
             summary = self.summarize(root)
             self.assertEqual(summary["status"], "failure")
+            self.assertEqual(summary["objective"], "Implement the plan.")
+            self.assertEqual(summary["result"], "Implemented and verified the plan.")
             self.assertEqual(summary["failed_criteria"], ["criterion-2"])
             self.assertEqual(summary["total_goal_tokens"], 1234)
             self.assertEqual(summary["token_measurement"], "runtime")
@@ -152,6 +156,8 @@ class InvocationLogTests(unittest.TestCase):
             self.start(root)
             summary = self.summarize(root)
             self.assertEqual(summary["status"], "active")
+            self.assertEqual(summary["objective"], "Implement the plan.")
+            self.assertIsNone(summary["result"])
             self.assertIsNone(summary["elapsed_ms"])
             self.assertIsNone(summary["total_goal_tokens"])
             self.assertIsNone(summary["token_measurement"])
@@ -162,13 +168,21 @@ class InvocationLogTests(unittest.TestCase):
             {
                 "type": "use_started",
                 "goal_id": "goal-1",
+                "objective": "Implement the plan.",
                 "start_fingerprint": "head-1",
                 "observation": "extra",
             },
             {"type": "use_started", "goal_id": "goal-1"},
             {
+                "type": "use_started",
+                "goal_id": "goal-1",
+                "objective": "first line\nsecond line",
+                "start_fingerprint": "head-1",
+            },
+            {
                 "type": "use_outcome",
                 "status": "success",
+                "result": "Implemented the plan.",
                 "failed_criteria": ["criterion-1"],
                 "end_fingerprint": "head-2",
                 "total_goal_tokens": 1,
@@ -176,7 +190,25 @@ class InvocationLogTests(unittest.TestCase):
             },
             {
                 "type": "use_outcome",
+                "status": "blocked",
+                "failed_criteria": [],
+                "end_fingerprint": "head-2",
+                "total_goal_tokens": None,
+                "token_measurement": "unavailable",
+            },
+            {
+                "type": "use_outcome",
+                "status": "blocked",
+                "result": "first line\nsecond line",
+                "failed_criteria": [],
+                "end_fingerprint": "head-2",
+                "total_goal_tokens": None,
+                "token_measurement": "unavailable",
+            },
+            {
+                "type": "use_outcome",
                 "status": "failure",
+                "result": "The plan failed.",
                 "failed_criteria": [],
                 "end_fingerprint": "head-2",
                 "total_goal_tokens": 1,
@@ -185,6 +217,7 @@ class InvocationLogTests(unittest.TestCase):
             {
                 "type": "use_outcome",
                 "status": "failure",
+                "result": "The plan failed.",
                 "failed_criteria": ["criterion-1"],
                 "end_fingerprint": "head-2",
                 "total_goal_tokens": -1,
@@ -193,6 +226,7 @@ class InvocationLogTests(unittest.TestCase):
             {
                 "type": "use_outcome",
                 "status": "blocked",
+                "result": "The plan was blocked.",
                 "failed_criteria": [],
                 "end_fingerprint": "head-2",
                 "total_goal_tokens": 1,
@@ -212,6 +246,7 @@ class InvocationLogTests(unittest.TestCase):
                 {
                     "type": "use_outcome",
                     "status": "blocked",
+                    "result": "The plan was blocked.",
                     "failed_criteria": [],
                     "end_fingerprint": "head-1",
                     "total_goal_tokens": None,
@@ -226,6 +261,7 @@ class InvocationLogTests(unittest.TestCase):
                 {
                     "type": "use_started",
                     "goal_id": "goal-1",
+                    "objective": "Implement the plan.",
                     "start_fingerprint": "head-1",
                 },
             )
@@ -237,6 +273,7 @@ class InvocationLogTests(unittest.TestCase):
                 {
                     "type": "use_outcome",
                     "status": "success",
+                    "result": "Implemented the plan.",
                     "failed_criteria": [],
                     "end_fingerprint": "head-2",
                     "total_goal_tokens": 1234,
@@ -267,6 +304,7 @@ class InvocationLogTests(unittest.TestCase):
                 {
                     "type": "use_outcome",
                     "status": "blocked",
+                    "result": "The plan was blocked.",
                     "failed_criteria": [],
                     "end_fingerprint": "head-1",
                     "total_goal_tokens": None,

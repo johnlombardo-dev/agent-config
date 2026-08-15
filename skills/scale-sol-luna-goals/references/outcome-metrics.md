@@ -24,6 +24,7 @@ Append `use_started` before dispatching work:
 printf '%s\n' '{
   "type":"use_started",
   "goal_id":"goal-1",
+  "objective":"Implement the accepted Agent Mail Phase 1 plan.",
   "start_fingerprint":"commit and relevant dirty state"
 }' | python3 /absolute/path/to/append_metric.py \
   --repository-id host/owner/repository \
@@ -40,6 +41,7 @@ Append one `use_outcome` when the invocation reaches its terminal state:
 printf '%s\n' '{
   "type":"use_outcome",
   "status":"success",
+  "result":"Implemented and verified the Agent Mail Phase 1 plan.",
   "failed_criteria":[],
   "end_fingerprint":"verified commit and relevant dirty state",
   "total_goal_tokens":12345,
@@ -51,7 +53,9 @@ printf '%s\n' '{
 
 Use these values:
 
+- `objective`: one line stating what the orchestrator was tasked to do.
 - `status`: `success`, `failure`, or `blocked`.
+- `result`: one line stating what the orchestrator actually did.
 - `failed_criteria`: stable acceptance-check IDs. It must be empty for `success` and non-empty for
   `failure`.
 - `end_fingerprint`: the terminal commit and relevant dirty state.

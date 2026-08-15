@@ -67,6 +67,7 @@ def validate_records(
 
     started = records[0]
     require_string(started, "goal_id")
+    require_string(started, "objective")
     require_string(started, "start_fingerprint")
     require_string(started, "started_at")
 
@@ -86,6 +87,7 @@ def validate_records(
         fail("successful outcome must not contain failed criteria")
     if outcome["status"] == "failure" and not failed_criteria:
         fail("failed outcome must name at least one failed criterion")
+    require_string(outcome, "result")
     require_string(outcome, "end_fingerprint")
     require_string(outcome, "completed_at")
     elapsed_ms = outcome.get("elapsed_ms")
@@ -130,7 +132,9 @@ def main() -> None:
         "repository_id": repository_id,
         "skill_use_id": skill_use_id,
         "goal_id": started["goal_id"],
+        "objective": started["objective"],
         "status": outcome["status"] if outcome else "active",
+        "result": outcome["result"] if outcome else None,
         "failed_criteria": outcome["failed_criteria"] if outcome else [],
         "start_fingerprint": started["start_fingerprint"],
         "end_fingerprint": outcome["end_fingerprint"] if outcome else None,
