@@ -38,6 +38,9 @@ class RepositoryIdentityTests(unittest.TestCase):
 
 
 class InvocationLogTests(unittest.TestCase):
+    repository_id = "github.com/example/project"
+    skill_use_id = "use-1"
+
     def append_result(
         self,
         root: Path,
@@ -48,9 +51,9 @@ class InvocationLogTests(unittest.TestCase):
                 sys.executable,
                 str(SCRIPTS / "append_metric.py"),
                 "--repository-id",
-                "github.com/example/project",
+                self.repository_id,
                 "--skill-use-id",
-                "use-1",
+                self.skill_use_id,
                 "--root",
                 str(root),
             ],
@@ -64,25 +67,31 @@ class InvocationLogTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
 
-    def summarize(self, root: Path) -> dict[str, object]:
-        result = subprocess.run(
+    def summarize_result(self, root: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
             [
                 sys.executable,
                 str(SCRIPTS / "summarize_metrics.py"),
                 "--repository-id",
-                "github.com/example/project",
+                self.repository_id,
                 "--skill-use-id",
-                "use-1",
+                self.skill_use_id,
                 "--root",
                 str(root),
             ],
-            check=True,
             capture_output=True,
             text=True,
         )
+
+    def summarize(self, root: Path) -> dict[str, object]:
+        result = self.summarize_result(root)
+        self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
 
-    def start(self, root: Path) -> dict[str, object]:
+    def record_path(self, root: Path) -> Path:
+        return root / self.repository_id / f"{self.skill_use_id}.jsonl"
+
+    def start_use(self, root: Path) -> dict[str, object]:
         return self.append(
             root,
             {
@@ -93,7 +102,46 @@ class InvocationLogTests(unittest.TestCase):
             },
         )
 
-    def outcome(
+    def start_subagent(
+        self,
+        root: Path,
+        assignment_id: str,
+        *,
+        parent_assignment_id: str | None = None,
+        objective: str = "Implement the bounded task.",
+    ) -> dict[str, object]:
+        return self.append(
+            root,
+            {
+                "type": "subagent_started",
+                "assignment_id": assignment_id,
+                "parent_assignment_id": parent_assignment_id,
+                "role": "luna_worker",
+                "requested_model": None,
+                "requested_reasoning_effort": "medium",
+                "objective": objective,
+            },
+        )
+
+    def finish_subagent(
+        self,
+        root: Path,
+        assignment_id: str,
+        *,
+        outcome: str = "completed",
+        result: str = "Completed and verified the bounded task.",
+    ) -> dict[str, object]:
+        return self.append(
+            root,
+            {
+                "type": "subagent_outcome",
+                "assignment_id": assignment_id,
+                "outcome": outcome,
+                "result": result,
+            },
+        )
+
+    def finish_use(
         self,
         root: Path,
         *,
@@ -115,204 +163,296 @@ class InvocationLogTests(unittest.TestCase):
             },
         )
 
-    def test_records_only_start_and_terminal_whole_goal_metrics(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            started = self.start(root)
-            outcome = self.outcome(
-                root,
-                status="failure",
-                failed_criteria=["criterion-2"],
-            )
-
-            record_path = root / "github.com/example/project/use-1.jsonl"
-            records = [json.loads(line) for line in record_path.read_text().splitlines()]
-            self.assertEqual([record["type"] for record in records], ["use_started", "use_outcome"])
-            self.assertEqual(started["schema_version"], 2)
-            self.assertIn("started_at", started)
-            self.assertEqual(outcome["total_goal_tokens"], 1234)
-            self.assertIsInstance(outcome["elapsed_ms"], int)
-
-            summary = self.summarize(root)
-            self.assertEqual(summary["status"], "failure")
-            self.assertEqual(summary["objective"], "Implement the plan.")
-            self.assertEqual(summary["result"], "Implemented and verified the plan.")
-            self.assertEqual(summary["failed_criteria"], ["criterion-2"])
-            self.assertEqual(summary["total_goal_tokens"], 1234)
-            self.assertEqual(summary["token_measurement"], "runtime")
-
-    def test_unavailable_tokens_are_explicit(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.start(root)
-            self.outcome(root, tokens=None, measurement="unavailable")
-            summary = self.summarize(root)
-            self.assertIsNone(summary["total_goal_tokens"])
-            self.assertEqual(summary["token_measurement"], "unavailable")
-
-    def test_active_summary_does_not_invent_an_outcome(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            self.start(root)
-            summary = self.summarize(root)
-            self.assertEqual(summary["status"], "active")
-            self.assertEqual(summary["objective"], "Implement the plan.")
-            self.assertIsNone(summary["result"])
-            self.assertIsNone(summary["elapsed_ms"])
-            self.assertIsNone(summary["total_goal_tokens"])
-            self.assertIsNone(summary["token_measurement"])
-
-    def test_invalid_or_extra_fields_are_rejected(self) -> None:
-        invalid_payloads = (
-            {"type": "assignment_outcome"},
+    def finish_subagent_result(
+        self, root: Path, assignment_id: str
+    ) -> subprocess.CompletedProcess[str]:
+        return self.append_result(
+            root,
             {
-                "type": "use_started",
-                "goal_id": "goal-1",
-                "objective": "Implement the plan.",
-                "start_fingerprint": "head-1",
-                "observation": "extra",
+                "type": "subagent_outcome",
+                "assignment_id": assignment_id,
+                "outcome": "completed",
+                "result": "Completed the task.",
             },
-            {"type": "use_started", "goal_id": "goal-1"},
-            {
-                "type": "use_started",
-                "goal_id": "goal-1",
-                "objective": "first line\nsecond line",
-                "start_fingerprint": "head-1",
-            },
+        )
+
+    def finish_use_result(self, root: Path) -> subprocess.CompletedProcess[str]:
+        return self.append_result(
+            root,
             {
                 "type": "use_outcome",
                 "status": "success",
                 "result": "Implemented the plan.",
-                "failed_criteria": ["criterion-1"],
+                "failed_criteria": [],
                 "end_fingerprint": "head-2",
-                "total_goal_tokens": 1,
+                "total_goal_tokens": 1234,
                 "token_measurement": "runtime",
-            },
-            {
-                "type": "use_outcome",
-                "status": "blocked",
-                "failed_criteria": [],
-                "end_fingerprint": "head-2",
-                "total_goal_tokens": None,
-                "token_measurement": "unavailable",
-            },
-            {
-                "type": "use_outcome",
-                "status": "blocked",
-                "result": "first line\nsecond line",
-                "failed_criteria": [],
-                "end_fingerprint": "head-2",
-                "total_goal_tokens": None,
-                "token_measurement": "unavailable",
-            },
-            {
-                "type": "use_outcome",
-                "status": "failure",
-                "result": "The plan failed.",
-                "failed_criteria": [],
-                "end_fingerprint": "head-2",
-                "total_goal_tokens": 1,
-                "token_measurement": "runtime",
-            },
-            {
-                "type": "use_outcome",
-                "status": "failure",
-                "result": "The plan failed.",
-                "failed_criteria": ["criterion-1"],
-                "end_fingerprint": "head-2",
-                "total_goal_tokens": -1,
-                "token_measurement": "runtime",
-            },
-            {
-                "type": "use_outcome",
-                "status": "blocked",
-                "result": "The plan was blocked.",
-                "failed_criteria": [],
-                "end_fingerprint": "head-2",
-                "total_goal_tokens": 1,
-                "token_measurement": "unavailable",
             },
         )
+
+    def test_records_append_only_invocation_and_nested_subagent_pairs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.start_use(root)
+            self.start_subagent(
+                root,
+                "implementation-1",
+                objective="Implement the storage migration.",
+            )
+            prefix = self.record_path(root).read_bytes()
+
+            self.start_subagent(
+                root,
+                "fixture-1",
+                parent_assignment_id="implementation-1",
+                objective="Create a bounded migration fixture.",
+            )
+            self.finish_subagent(
+                root,
+                "fixture-1",
+                outcome="useful-no-go",
+                result="Proved that the proposed fixture was unnecessary.",
+            )
+            self.finish_subagent(
+                root,
+                "implementation-1",
+                result="Implemented the migration and passed its focused tests.",
+            )
+            self.finish_use(root)
+
+            journal = self.record_path(root).read_bytes()
+            self.assertTrue(journal.startswith(prefix))
+            records = [json.loads(line) for line in journal.splitlines()]
+            self.assertEqual(
+                [record["type"] for record in records],
+                [
+                    "use_started",
+                    "subagent_started",
+                    "subagent_started",
+                    "subagent_outcome",
+                    "subagent_outcome",
+                    "use_outcome",
+                ],
+            )
+
+            for record in records:
+                self.assertEqual(record["schema_version"], 3)
+                self.assertIsInstance(record["created_at"], str)
+                self.assertTrue(record["created_at"])
+                for forbidden in (
+                    "started_at",
+                    "completed_at",
+                    "elapsed_ms",
+                    "timing_status",
+                ):
+                    self.assertNotIn(forbidden, record)
+
+            for record in records:
+                if record["type"].endswith("started"):
+                    self.assertIsInstance(record["objective"], str)
+                    self.assertTrue(record["objective"])
+                else:
+                    self.assertIsInstance(record["result"], str)
+                    self.assertTrue(record["result"])
+
+            summary = self.summarize(root)
+            self.assertEqual(summary["status"], "success")
+            self.assertEqual(summary["started_created_at"], records[0]["created_at"])
+            self.assertEqual(summary["outcome_created_at"], records[-1]["created_at"])
+            self.assertEqual(summary["subagent_count"], 2)
+            self.assertEqual(
+                summary["subagent_outcome_counts"],
+                {"completed": 1, "useful-no-go": 1},
+            )
+            self.assertEqual(summary["unfinished_assignment_ids"], [])
+            self.assertEqual(
+                summary["subagents"][1]["parent_assignment_id"],
+                "implementation-1",
+            )
+            self.assertEqual(
+                summary["subagents"][1]["result"],
+                "Proved that the proposed fixture was unnecessary.",
+            )
+
+    def test_zero_subagent_invocation_is_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.start_use(root)
+            self.finish_use(root)
+            summary = self.summarize(root)
+            self.assertEqual(summary["subagent_count"], 0)
+            self.assertEqual(summary["subagent_outcome_counts"], {})
+
+    def test_active_summary_reports_unfinished_subagents_without_inventing_results(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.start_use(root)
+            self.start_subagent(root, "implementation-1")
+            summary = self.summarize(root)
+            self.assertEqual(summary["status"], "active")
+            self.assertIsNone(summary["result"])
+            self.assertEqual(summary["unfinished_assignment_ids"], ["implementation-1"])
+            self.assertIsNone(summary["subagents"][0]["outcome"])
+            self.assertIsNone(summary["subagents"][0]["result"])
+
+    def test_unavailable_goal_tokens_are_explicit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.start_use(root)
+            self.finish_use(root, tokens=None, measurement="unavailable")
+            summary = self.summarize(root)
+            self.assertIsNone(summary["total_goal_tokens"])
+            self.assertEqual(summary["token_measurement"], "unavailable")
+
+    def test_invalid_payload_fields_and_values_are_rejected(self) -> None:
+        valid_start = {
+            "type": "use_started",
+            "goal_id": "goal-1",
+            "objective": "Implement the plan.",
+            "start_fingerprint": "head-1",
+        }
+        invalid_payloads = (
+            {"type": "assignment_outcome"},
+            {**valid_start, "observation": "extra"},
+            {key: value for key, value in valid_start.items() if key != "objective"},
+            {**valid_start, "objective": "first line\nsecond line"},
+            {**valid_start, "elapsed_ms": 1},
+            {**valid_start, "created_at": "2026-01-01T00:00:00Z"},
+        )
         for payload in invalid_payloads:
-            with self.subTest(payload=payload), tempfile.TemporaryDirectory() as directory:
+            with (
+                self.subTest(payload=payload),
+                tempfile.TemporaryDirectory() as directory,
+            ):
                 result = self.append_result(Path(directory), payload)
                 self.assertNotEqual(result.returncode, 0)
 
-    def test_records_must_be_ordered_and_unique(self) -> None:
+    def test_subagent_payload_requires_objective_result_and_allowed_outcome(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            missing_start = self.append_result(
+            self.start_use(root)
+            missing_objective = self.append_result(
                 root,
                 {
-                    "type": "use_outcome",
-                    "status": "blocked",
-                    "result": "The plan was blocked.",
-                    "failed_criteria": [],
-                    "end_fingerprint": "head-1",
-                    "total_goal_tokens": None,
-                    "token_measurement": "unavailable",
+                    "type": "subagent_started",
+                    "assignment_id": "implementation-1",
+                    "parent_assignment_id": None,
+                    "role": "worker",
+                    "requested_model": None,
+                    "requested_reasoning_effort": None,
                 },
             )
-            self.assertNotEqual(missing_start.returncode, 0)
+            self.assertNotEqual(missing_objective.returncode, 0)
 
-            self.start(root)
+            self.start_subagent(root, "implementation-1")
+            for payload in (
+                {
+                    "type": "subagent_outcome",
+                    "assignment_id": "implementation-1",
+                    "outcome": "completed",
+                },
+                {
+                    "type": "subagent_outcome",
+                    "assignment_id": "implementation-1",
+                    "outcome": "mysterious",
+                    "result": "Something happened.",
+                },
+                {
+                    "type": "subagent_outcome",
+                    "assignment_id": "implementation-1",
+                    "outcome": "completed",
+                    "result": "first line\nsecond line",
+                },
+            ):
+                with self.subTest(payload=payload):
+                    result = self.append_result(root, payload)
+                    self.assertNotEqual(result.returncode, 0)
+
+    def test_record_order_pairing_and_terminal_completeness_are_enforced(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            missing_use_start = self.finish_subagent_result(root, "implementation-1")
+            self.assertNotEqual(missing_use_start.returncode, 0)
+
+            self.start_use(root)
+            missing_parent = self.append_result(
+                root,
+                {
+                    "type": "subagent_started",
+                    "assignment_id": "child-1",
+                    "parent_assignment_id": "parent-1",
+                    "role": "worker",
+                    "requested_model": None,
+                    "requested_reasoning_effort": None,
+                    "objective": "Do the child task.",
+                },
+            )
+            self.assertNotEqual(missing_parent.returncode, 0)
+
+            self.start_subagent(root, "implementation-1")
             duplicate_start = self.append_result(
                 root,
                 {
-                    "type": "use_started",
-                    "goal_id": "goal-1",
-                    "objective": "Implement the plan.",
-                    "start_fingerprint": "head-1",
+                    "type": "subagent_started",
+                    "assignment_id": "implementation-1",
+                    "parent_assignment_id": None,
+                    "role": "worker",
+                    "requested_model": None,
+                    "requested_reasoning_effort": None,
+                    "objective": "Repeat the task.",
                 },
             )
             self.assertNotEqual(duplicate_start.returncode, 0)
 
-            self.outcome(root)
-            duplicate_outcome = self.append_result(
+            unfinished = self.finish_use_result(root)
+            self.assertNotEqual(unfinished.returncode, 0)
+            self.finish_subagent(root, "implementation-1")
+            duplicate_outcome = self.finish_subagent_result(root, "implementation-1")
+            self.assertNotEqual(duplicate_outcome.returncode, 0)
+            self.finish_use(root)
+            after_terminal = self.append_result(
                 root,
                 {
-                    "type": "use_outcome",
-                    "status": "success",
-                    "result": "Implemented the plan.",
-                    "failed_criteria": [],
-                    "end_fingerprint": "head-2",
-                    "total_goal_tokens": 1234,
-                    "token_measurement": "runtime",
+                    "type": "subagent_started",
+                    "assignment_id": "late-1",
+                    "parent_assignment_id": None,
+                    "role": "worker",
+                    "requested_model": None,
+                    "requested_reasoning_effort": None,
+                    "objective": "Start too late.",
                 },
             )
-            self.assertNotEqual(duplicate_outcome.returncode, 0)
+            self.assertNotEqual(after_terminal.returncode, 0)
 
-    def test_legacy_schema_is_not_extended(self) -> None:
+    def test_legacy_schema_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            record_path = root / "github.com/example/project/use-1.jsonl"
+            record_path = self.record_path(root)
             record_path.parent.mkdir(parents=True)
             record_path.write_text(
                 json.dumps(
                     {
-                        "schema_version": 1,
+                        "schema_version": 2,
                         "type": "use_started",
-                        "repository_id": "github.com/example/project",
-                        "skill_use_id": "use-1",
-                        "started_at": "2026-08-15T00:00:00.000Z",
+                        "goal_id": "goal-1",
+                        "objective": "Implement the plan.",
+                        "start_fingerprint": "head-1",
+                        "started_at": "2026-01-01T00:00:00Z",
+                        "repository_id": self.repository_id,
+                        "skill_use_id": self.skill_use_id,
                     }
                 )
-                + "\n"
+                + "\n",
+                encoding="utf-8",
             )
-            result = self.append_result(
-                root,
-                {
-                    "type": "use_outcome",
-                    "status": "blocked",
-                    "result": "The plan was blocked.",
-                    "failed_criteria": [],
-                    "end_fingerprint": "head-1",
-                    "total_goal_tokens": None,
-                    "token_measurement": "unavailable",
-                },
-            )
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("unsupported schema", result.stderr)
+            append_result = self.finish_use_result(root)
+            self.assertNotEqual(append_result.returncode, 0)
+            summary_result = self.summarize_result(root)
+            self.assertNotEqual(summary_result.returncode, 0)
 
 
 if __name__ == "__main__":

@@ -16,15 +16,15 @@ description: >-
 
 ## Normative ownership, terms, and precedence
 
-This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only assignment schemas and Luna profile selection. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [delivery reference](references/delivery.md) owns only Git, PR, CI, and merge mechanics. The [outcome-metrics reference](references/outcome-metrics.md) owns the two-record invocation schema and final summary. References must not redefine this file's semantics.
+This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only assignment schemas and Luna profile selection. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [delivery reference](references/delivery.md) owns only Git, PR, CI, and merge mechanics. The [outcome-metrics reference](references/outcome-metrics.md) owns the append-only invocation and subagent record pairs plus the final summary. References must not redefine this file's semantics.
 
 ## Invocation contract
 
 Once invoked, this skill runs the complete goal lifecycle without requiring separate requests for its normal functions:
 
 - persist and maintain compact goal state;
-- record one timestamped objective and one terminal result;
-- summarize whole-goal status, elapsed time, and total tokens at final signoff;
+- record one timestamped objective and terminal result for the invocation and every subagent dispatch;
+- summarize whole-goal status and tokens plus subagent counts and outcomes at final signoff;
 - retain and reuse one same-domain writer when the reuse rule applies;
 - grant bounded depth-one research and external artifact scope when the dispatch rules require them;
 - execute the selected delivery mode through its terminal state.
@@ -83,7 +83,7 @@ wins:
 default merge after a draft delivery.
 
 - The orchestrator owns the user goal, roadmap, Consequential Decisions, contract acceptance, implementation-worker dispatch, integration, and completion.
-- Sol contract writers research and propose; they do not decide for the orchestrator, implement, integrate, persist metrics, or declare completion.
+- Sol contract writers research and propose; they do not decide for the orchestrator, implement, integrate, or declare completion. An agent that dispatches a child may append only that child's `subagent_started` and `subagent_outcome` records to the orchestrator-provided journal.
 - Luna executes one accepted task with frozen Consequential Decisions. It stops when success requires a decision or scope change and cannot dispatch another agent.
 - Give every mutation surface one active owner. Parallel work must be independently acceptable and non-overlapping.
 - Return distilled findings and evidence pointers, not raw research, logs, or reasoning traces.
@@ -143,7 +143,7 @@ Use an independent evidence check only when an incorrect reused finding could af
 
 ## Canonical iterative goal loop
 
-At invocation, read [references/outcome-metrics.md](references/outcome-metrics.md) and initialize its durable skill-use record with `scripts/append_metric.py` before dispatching work. Use the helper for every metrics append so it can enforce the schema and add event timestamps. Metrics persistence is authorized by this skill and remains outside the repository and its worktrees.
+At invocation, read [references/outcome-metrics.md](references/outcome-metrics.md) and initialize its durable skill-use record with `scripts/append_metric.py` before dispatching work. Append `subagent_started` immediately before every dispatch and `subagent_outcome` when it terminates. Give a nested dispatcher the same journal identity and helper path so it records its child's pair. Use the helper for every append so it can enforce the schema and add `created_at` without modifying prior records. Never calculate or persist per-subagent duration. Metrics persistence is authorized by this skill and remains outside the repository and its worktrees.
 
 Repeat this loop until the whole goal is verified:
 
@@ -188,4 +188,4 @@ Before any model-specific dispatch, read [references/runtime-routing.md](referen
 
 At each named checkpoint, assess assumptions, confidence, risks, rework, duplicated research, verification cost, and whether the roadmap still reflects integrated evidence. When a fix repeatedly reopens the same Failure Domain or expands its dependent failure surface, stop patch fanout and reframe that domain before dispatching more Luna work.
 
-Before final signoff, verify the actual goal criteria, required retirement accounting, final integration checks, absence of unresolved required work, and the selected delivery mode's terminal state. Default completion requires the exact verified head to pass required CI and be merged. No-PR completion requires final local verification. No-merge completion requires final verification and green required CI, but not merge. Complete the current skill-use record, update the durable goal snapshot, run `scripts/summarize_metrics.py`, and report the available invocation summary without inventing missing timing. Do not require the user to ask for metrics analysis.
+Before final signoff, verify the actual goal criteria, required retirement accounting, final integration checks, absence of unresolved required work, and the selected delivery mode's terminal state. Default completion requires the exact verified head to pass required CI and be merged. No-PR completion requires final local verification. No-merge completion requires final verification and green required CI, but not merge. Record a terminal outcome for every started subagent, complete the invocation record, update the durable goal snapshot, run `scripts/summarize_metrics.py`, and report whole-goal runtime telemetry plus the persisted subagent count and outcomes. Do not invent missing timing or require the user to ask for metrics analysis.

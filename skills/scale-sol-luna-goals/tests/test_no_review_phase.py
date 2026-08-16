@@ -15,7 +15,9 @@ class NoReviewPhaseTests(unittest.TestCase):
             SKILL_ROOT / "references" / "runtime-routing.md",
             SKILL_ROOT / "references" / "task-packets.md",
         ]
-        active_text = "\n".join(path.read_text(encoding="utf-8") for path in active_files)
+        active_text = "\n".join(
+            path.read_text(encoding="utf-8") for path in active_files
+        )
 
         for obsolete in (
             "review-convergence",
@@ -30,15 +32,19 @@ class NoReviewPhaseTests(unittest.TestCase):
         self.assertFalse((SKILL_ROOT / "references" / "review-convergence.md").exists())
 
     def test_delivery_does_not_start_a_replacement_review_loop(self) -> None:
-        delivery = (SKILL_ROOT / "references" / "delivery.md").read_text(encoding="utf-8")
+        delivery = (SKILL_ROOT / "references" / "delivery.md").read_text(
+            encoding="utf-8"
+        )
         metrics = (SKILL_ROOT / "references" / "outcome-metrics.md").read_text(
             encoding="utf-8"
         )
 
         self.assertIn("SSLG has no code-review phase", delivery)
         self.assertIn("Do not request code review", delivery)
-        self.assertIn("Record exactly two events", metrics)
-        self.assertIn("Do not record assignment outcomes", metrics)
+        self.assertIn("Append `subagent_started`", metrics)
+        self.assertIn("Append `subagent_outcome`", metrics)
+        self.assertIn("It never modifies an existing line", metrics)
+        self.assertIn("must not calculate durations", metrics)
 
     def test_pre_delivery_qa_keeps_the_four_risk_classes(self) -> None:
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
