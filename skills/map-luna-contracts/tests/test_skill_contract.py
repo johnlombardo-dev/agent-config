@@ -61,6 +61,24 @@ class MapLunaContractsTests(unittest.TestCase):
         self.assertIn("match an existing successor and dependency or reshape trigger", skill)
         self.assertIn("The graph is authoritative", skill)
 
+    def test_dependency_blocked_nodes_remain_unshaped(self) -> None:
+        skill = " ".join(
+            (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8").split()
+        )
+
+        for phrase in (
+            "Do not apply the shaper to an outcome whose named graph dependencies are incomplete",
+            "unshaped `blocked-by-dependency` node",
+            "Apply `shape-luna-contract` only to outcomes whose named dependencies are satisfied now",
+            "`unshaped` for `blocked-by-dependency` and `reshape-after-evidence`",
+            "it owns no mutation authority",
+            "`WAVE` is only the earliest candidate wave, not dispatch authority",
+            "reapply `shape-luna-contract` against the current fingerprint",
+        ):
+            self.assertIn(phrase, skill)
+
+        self.assertNotIn("the contract is fully shaped but awaits", skill)
+
     def test_map_is_not_the_default_orchestrator_path(self) -> None:
         for consumer_name in ("scale-sol-luna-goals", "deliver-sol-luna-goals"):
             consumer = REPOSITORY_ROOT / "skills" / consumer_name / "SKILL.md"

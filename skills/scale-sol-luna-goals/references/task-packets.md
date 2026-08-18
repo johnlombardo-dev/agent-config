@@ -19,12 +19,29 @@ AUTHORITY: required sources and precedence; read scope; mutation scope, normally
 NESTED RESEARCH: none, or depth 1 plus child count, model/capability, read scope, and cost limit
 SHAPING: none, or $shape-luna-contract at the orchestrator-resolved skill path after research
 STOP: invalid assumptions, evidence gap, scope boundary, cost limit, or prerequisite
-RETURN: GO, NO-GO, ESCALATE, or PREREQUISITE; decision delta, evidence/confidence, next contract or reason none, successor/blocker
+RETURN: MODE, STATUS, decision delta, evidence/confidence, result payload, successor/blocker
 ```
 
 `PRIOR` never substitutes for current `STATE`, `AUTHORITY`, `STOP`, or `RETURN`. A resumed writer receives a new assignment and may rely only on the selected findings after the required revalidation.
 
-When `SHAPING` is required, include the standalone skill's current path in `AUTHORITY` and explicitly invoke it in the writer assignment. The writer may research first within its granted budget, then must read and apply the skill completely to exactly one next-dispatch outcome. It returns the skill's `READY`, `ESCALATE`, `PREREQUISITE`, or `NO-OP` result as a proposal. The orchestrator still owns contract acceptance, route selection, dispatch, integration, and replanning.
+Use exactly one return envelope:
+
+```text
+MODE: research or shaped
+STATUS: mode-specific terminal status
+DECISION DELTA: proposed decision change or none
+EVIDENCE: decisive pointers, applicability, and confidence
+RESULT: research finding, shaped contract, escalation, exact prerequisite, or no-op evidence
+NEXT: at most one provisional successor, blocker, or none
+```
+
+When `SHAPING` is `none`, use `MODE: research` and `STATUS: GO`, `NO-GO`, or `PREREQUISITE`.
+When `SHAPING` names the standalone skill, use `MODE: shaped` and `STATUS: READY`, `ESCALATE`,
+`PREREQUISITE`, or `NO-OP`. Research may precede shaping, but it does not wrap or rename the final
+shaper status. An early viability failure becomes an exact shaped-mode `PREREQUISITE`, or `NO-OP`
+when evidence proves no implementation outcome remains.
+
+When `SHAPING` is required, include the standalone skill's current path in `AUTHORITY` and explicitly invoke it in the writer assignment. The writer may research first within its granted budget, then must read and apply the skill completely to exactly one next-dispatch outcome. It returns the shaped envelope as a proposal. The orchestrator still owns contract acceptance, route selection, dispatch, integration, and replanning.
 
 The orchestrator dispatches contract writers. A writer may dispatch a research child when the orchestrator records a depth-one budget in the assignment. This is internal assignment scope, not a separate user-authorization gate. Require all of the following:
 

@@ -35,8 +35,12 @@ Before shaping any worker node, read `../shape-luna-contract/SKILL.md` completel
 - Do not copy, summarize, or redefine those rules here.
 - A per-node `ESCALATE` becomes a `requires-higher-capability` graph node. Preserve the indivisible
   Failure Domain and required route; do not split it again to manufacture Luna work.
-- A per-node `PREREQUISITE` becomes either a set-level prerequisite or a
-  `reshape-after-evidence` node. Never weaken it into a dispatchable contract.
+- Do not apply the shaper to an outcome whose named graph dependencies are incomplete. Preserve it
+  as an unshaped `blocked-by-dependency` node with the known outcome, dependency IDs, expected
+  produced-state handoff, and reshape trigger.
+- A per-node `PREREQUISITE` becomes a set-level prerequisite when it blocks trustworthy mapping, or
+  an unshaped `reshape-after-evidence` node when named non-dependency evidence can resolve it. Never
+  weaken it into a dispatchable contract.
 - A per-node `NO-OP` removes that node unless its absence is itself evidence needed by goal
   closure.
 - Preserve the next-dispatch skill's parent record per node. Its provisional `NEXT` must be `none`
@@ -90,10 +94,11 @@ independently. Keep uncertainties visible as reshape triggers instead of inventi
 5. **Build the shared-surface ledger.** Record every file, API, type, schema, state owner, fixture,
    generated artifact, or operational boundary used by more than one node. Assign one mutation
    owner per wave or serialize mutation with an explicit compatibility rule.
-6. **Classify and shape each node.** Apply `shape-luna-contract` to each currently knowable outcome.
-   A map may contain many shaped contracts even though the component skill returns exactly one per
-   application. Preserve `ESCALATE` outcomes as non-Luna nodes and mark evidence-dependent outcomes
-   for later reshaping.
+6. **Classify and shape eligible nodes.** Apply `shape-luna-contract` only to outcomes whose named
+   dependencies are satisfied now. Preserve outcomes with incomplete graph dependencies as
+   unshaped `blocked-by-dependency` nodes. A map may contain many shaped contracts even though the
+   component skill returns exactly one per application. Preserve `ESCALATE` outcomes as non-Luna
+   nodes and mark other evidence-dependent outcomes for later reshaping.
 7. **Unify validation.** Retain each contract's checks, add shared-surface checks at producer and
    consumer boundaries, and map every goal criterion to a final observing check.
 8. **Audit the set.** Reject missing criteria, contracts without goal value, hidden shared mutation,
@@ -110,8 +115,10 @@ NODE | OUTCOME | ROUTE | PROFILE | STATUS | DEPENDS ON | PRODUCES | MUTATES | SH
 
 Use these statuses:
 
-- `ready`: all dependencies and contract prerequisites are satisfied.
-- `blocked-by-dependency`: the contract is fully shaped but awaits named contract outputs.
+- `ready`: all dependencies and contract prerequisites are satisfied and the shaper returned
+  `READY` against the current fingerprint.
+- `blocked-by-dependency`: the outcome is provisionally mapped but must remain unshaped until all
+  named graph dependencies are integrated and their produced state is current.
 - `reshape-after-evidence`: the outcome is known, but later evidence must be integrated before
   applying `shape-luna-contract` again.
 - `requires-higher-capability`: the outcome failed the Luna eligibility gate and requires the
@@ -119,17 +126,23 @@ Use these statuses:
   or `max`; `ultra` is forbidden.
 
 Use `Compact` or `Full` for a shaped Luna node's `PROFILE`, `unshaped` for
-`reshape-after-evidence`, and `n/a` for `requires-higher-capability`.
+`blocked-by-dependency` and `reshape-after-evidence`, and `n/a` for
+`requires-higher-capability`.
 
 Only `ready` contracts may be dispatched to Luna. Do not invent a Luna prompt for a
-`reshape-after-evidence` or `requires-higher-capability` node. Route the latter using its escalation
-record after its named dependencies are complete, and preserve it as a dependency for downstream
-nodes.
+`blocked-by-dependency`, `reshape-after-evidence`, or `requires-higher-capability` node. An unshaped
+node may record candidate shared surfaces for coordination, but it owns no mutation authority and
+its profile, checks, and worker packet remain unset. Its `WAVE` is only the earliest candidate wave,
+not dispatch authority, and must be recomputed after shaping. After its dependencies or named
+evidence are integrated, reapply `shape-luna-contract` against the current fingerprint before
+changing its status to `ready` or `requires-higher-capability`. Route the latter using its
+escalation record and preserve it as a dependency for downstream nodes.
 
 For example, a map that introduces a state-chart may contain one mechanical port adapter, one
 indivisible high-capability state-chart node, and later mechanical caller and black-box test nodes.
-The later nodes depend on the integrated state-chart output. They do not own its states,
-transitions, guards, actions, actors, or lifecycle semantics.
+The later nodes remain unshaped and blocked by dependency until the state-chart output is
+integrated. They do not own its states, transitions, guards, actions, actors, or lifecycle
+semantics.
 
 ## Shared-surface ledger
 

@@ -79,9 +79,22 @@ class ShapeLunaContractTests(unittest.TestCase):
             / "references"
             / "task-packets.md"
         ).read_text(encoding="utf-8")
+        normalized_packets = " ".join(scale_packets.split())
         self.assertNotIn("Compact Luna contract", scale_packets)
         self.assertNotIn("Full Luna additions", scale_packets)
         self.assertIn("$shape-luna-contract at the orchestrator-resolved skill path", scale_packets)
+        self.assertIn("Use exactly one return envelope", scale_packets)
+        self.assertIn("MODE: research or shaped", scale_packets)
+        self.assertIn(
+            "use `MODE: research` and `STATUS: GO`, `NO-GO`, or `PREREQUISITE`",
+            scale_packets,
+        )
+        self.assertIn(
+            "use `MODE: shaped` and `STATUS: READY`, `ESCALATE`",
+            scale_packets,
+        )
+        self.assertIn("does not wrap or rename the final shaper status", normalized_packets)
+        self.assertNotIn("RETURN: GO, NO-GO, ESCALATE, or PREREQUISITE", scale_packets)
 
 
 if __name__ == "__main__":
