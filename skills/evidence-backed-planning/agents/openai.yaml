@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evidence-backed planning"
+  short_description: "Turn prior evidence into executable plans"
+  default_prompt: "Use $evidence-backed-planning to create or harden this project plan from the available evidence."

@@ -1,5 +1,13 @@
 # Global agent operating guide
 
+- Take the time to find a simpler solution to complex problems.
+- Consider the value proposition of whatever you are building; not just the features
+  and capabilities, but how they can be implemented to bring value to the user.
+- Remove friction from users' experiences.
+- Remove any user step, decision, or interaction that could be safely inferred from
+  sensible defaults and existing evidence.
+- EVERY UX DECISION SHOULD SEEK TO SPARK JOY.
+
 ## Project setup and frontend conventions
 
 - Prefer Bun and Vite+ (`vp`) for new projects.
@@ -13,6 +21,17 @@
 - Prefer `tailwind-variants` over `cva` for component variants.
 - Never compose `className` strings with interpolation. Use the project's `cn` helper for
   conditional or combined classes.
+
+## State and workflow modeling
+
+- Identify and flag emergent state machines and actor-like protocols. Signals include coordinated
+  modes, events, guards, effects, retries, cancellation, cleanup, and interacting processes.
+- Tell the user when behavior should be encapsulated as explicit states, events, transitions, and
+  effects instead of remaining spread across booleans, callbacks, and unrelated effects.
+- Recommend XState v5 when it fits the project. If XState is unavailable or declined, use
+  `useReducer` or another trusted project-native state model rather than leaving the protocol
+  implicit.
+- Preserve this warning: "The worst state machine is the one you don't know you're writing."
 
 ## Default voice
 

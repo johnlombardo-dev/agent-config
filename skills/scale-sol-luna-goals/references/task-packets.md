@@ -7,8 +7,7 @@ This reference owns assignment schemas and Luna profile selection only. Dispatch
 ## Contents
 
 - [Sol contract-writer assignment](#sol-contract-writer-assignment)
-- [Retained writers and evidence review](#retained-writers-and-evidence-review)
-- [Review-phase xhigh contract-writer profile](#review-phase-xhigh-contract-writer-profile)
+- [Retained writers and evidence checks](#retained-writers-and-evidence-checks)
 - [Luna contract selection](#luna-contract-selection)
 - [Compact Luna contract](#compact-luna-contract)
 - [Full Luna additions](#full-luna-additions)
@@ -28,7 +27,7 @@ RETURN: GO, NO-GO, or PREREQUISITE; decision delta, evidence/confidence, next co
 
 `PRIOR` never substitutes for current `STATE`, `AUTHORITY`, `STOP`, or `RETURN`. A resumed writer receives a new assignment and may rely only on the selected findings after the required revalidation.
 
-The orchestrator dispatches contract writers. A contract writer using the review-phase `xhigh` profile may dispatch the required local reviewer only under the review schema below. A writer may separately dispatch a research child when the orchestrator records a depth-one budget in the assignment. This is internal assignment scope, not a separate user-authorization gate. Require all of the following:
+The orchestrator dispatches contract writers. A writer may dispatch a research child when the orchestrator records a depth-one budget in the assignment. This is internal assignment scope, not a separate user-authorization gate. Require all of the following:
 
 - The child owns one objectively answerable, read-only question.
 - The child makes no decision, writes no contract or implementation, and cannot dispatch another agent.
@@ -38,7 +37,7 @@ The orchestrator dispatches contract writers. A contract writer using the review
 
 Return the shortest sufficient response. Include technical detail that affects a decision; omit raw logs, source digests, dead ends, and repeated accepted facts. Put necessary long analysis in the external artifact path authorized by the parent skill, never in an unrequested repository file.
 
-## Retained writers and evidence review
+## Retained writers and evidence checks
 
 Keep this retained-writer entry in the parent goal ledger whenever the parent reuse rule retains a writer. Do not put it in the writer prompt:
 
@@ -48,31 +47,11 @@ RETAINED: writer ID and domain; last task/state fingerprint; selected evidence p
 
 Reassess the entry at the next framing checkpoint. Resume only when the new assignment is valid and Worth. Otherwise close the writer, including when state or authority drift makes its context unreliable, the required runtime route is unavailable, or the domain is complete.
 
-Shape independent evidence review through the same Sol assignment schema. Bound `PROBLEM` to exact claims and their intended downstream use; make `AUTHORITY` read-only and name the governing sources. Use final `GO` only when every reviewed claim has a `supported`, `qualified`, `rejected`, or `duplicate` disposition with evidence, applicability limits, and invalidation triggers. Return `PREREQUISITE` for missing authority, unresolved conflicts, or material drift. The orchestrator decides which supported or qualified claims enter current `KNOWN` or `VERIFY` state.
-
-## Review-phase xhigh contract-writer profile
-
-Use this schema only for a cycle governed by [review-convergence.md](review-convergence.md):
-
-```text
-STAGE: local or hosted-pr; cycle ID; exact base and head; review source
-SOURCE: local merge target and head, or hosted PR/review pointer and exact reviewed head
-STATE: relevant fingerprint, accepted decisions, prior cycle delta, owned dirty state, and known checks
-AUTHORITY: governing sources and precedence; repository read scope; mutation limited to review events in one external invocation log
-REVIEWER CHILD: local requires one fresh Sol xhigh child using review-agent; hosted-pr normally none because the writer reads the hosted source directly
-NESTED RESEARCH: none, or depth 1 plus child count, exact question/read scope, capability, and cost limit
-RECORD: canonical repository ID, skill-use ID, stage, append_metric.py path, role=writer, prior tail fingerprint, and append-only entry types permitted
-STOP: stale head, incomplete findings, authority conflict, consequential decision, unsafe ownership overlap, or unavailable exact route
-RETURN: GO, NO-GO, or PREREQUISITE; normalized finding index and dispositions; proposed Luna contracts; dependency/conflict graph; manifest; residual risks; invocation-log pointer
-```
-
-For a local cycle, require the writer to spawn a fresh reviewer with only the exact review target, applicable instructions, and the `review-agent` skill. The reviewer cannot inherit candidate dispositions or prior review conclusions. For a hosted cycle, give the writer the PR and exact-head review pointer; the writer reads every actionable hosted finding directly. Use research children only when the existing dispatch test makes them Worth.
-
-Normalize and append every finding before shaping contracts. The writer must then examine related findings, combine those that share an inseparable Failure Domain, and split those with independently acceptable mutation and rollback surfaces. Every proposed contract must use the Luna Compact or Full schema below and name finding IDs, dependencies, conflicts, mutation ownership, checks, and a split trigger. Persisted writer events record candidate dispositions and proposals, not acceptance. The orchestrator accepts, rejects, schedules, and appends state transitions.
+Shape an independent evidence check through the same Sol assignment schema. Bound `PROBLEM` to exact claims and their intended downstream use; make `AUTHORITY` read-only and name the governing sources. Use final `GO` only when every checked claim has a `supported`, `qualified`, `rejected`, or `duplicate` disposition with evidence, applicability limits, and invalidation triggers. Return `PREREQUISITE` for missing authority, unresolved conflicts, or material drift. The orchestrator decides which supported or qualified claims enter current `KNOWN` or `VERIFY` state.
 
 ## Luna contract selection
 
-**Compact** is the default Luna profile for one bounded, independently reviewable outcome using only the core contract sections below.
+**Compact** is the default Luna profile for one bounded, independently verifiable outcome using only the core contract sections below.
 
 **Full** is Compact plus only the risk-specific additions needed when the task changes a public boundary, security or data behavior, migration or deletion, several integration seams, a known red baseline inside its Failure Domain, or another invariant governed by a Consequential Decision.
 
@@ -82,7 +61,7 @@ If the Full additions make the task incoherent, split it rather than expanding t
 
 ```text
 GOAL
-One independently reviewable outcome.
+One independently verifiable outcome.
 
 STATE
 Relevant fingerprint, KNOWN facts, and AVOID facts. Include only verification that does not change a Consequential Decision; unresolved decisions remain with the orchestrator.
@@ -95,7 +74,7 @@ DECISIONS AND CONSTRAINTS
 Frozen interfaces, behavior, policy, and invariants.
 
 DONE WHEN
-Cheapest faithful checks and required artifacts.
+Affected QA seam, invariant, cheapest faithful check, one adjacent counterexample, and required artifacts.
 
 STOP AND RETURN
 False assumptions, scope or decision changes, ownership conflicts, or evidence outside authority.
@@ -130,5 +109,5 @@ Keep this in the goal ledger and omit it from the Luna prompt:
 TASK: ID, profile, outcome/Failure Domain, split trigger
 ROUTE: logical role, current runtime mapping, effort, context fork, verification evidence
 OWNERSHIP: mutation reservation and concurrent tasks
-REVIEW: why independent verification is or is not required
+EVIDENCE: why independent verification is or is not required
 ```

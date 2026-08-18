@@ -1,0 +1,6 @@
+interface:
+  display_name: "Evidence-First Review"
+  short_description: "Find defects with targeted executable evidence"
+  default_prompt: "Use $evidence-first-review to review this change or system with focused evidence and report one batch of findings and gaps."
+policy:
+  allow_implicit_invocation: true

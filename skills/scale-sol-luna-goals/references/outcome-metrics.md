@@ -1,216 +1,128 @@
 # Outcome metrics
 
-Read this reference and record events every time the skill is invoked. One append-only JSONL file is the canonical durable record for the invocation, including metrics, review findings, proposed contracts, decisions, and results:
+Record one append-only JSONL journal for each SSLG invocation:
 
 ```text
 ~/.codex/subagent-metrics/scale-sol-luna-goals/<repository-id>/<skill-use-id>.jsonl
 ```
 
-Use [`append_metric.py`](../scripts/append_metric.py) for every append. Do not create or write a separate `~/.codex/subagent-contracts` tree. Existing files there are legacy evidence, not a current write target. Session state may buffer writes temporarily but is not the durable record. If persistence fails, continue the goal, report the gap, and backfill only facts that remain directly measurable.
+Use [`append_metric.py`](../scripts/append_metric.py) for every append. The helper validates the
+payload, adds the canonical envelope and `created_at`, locks the journal, and appends one new line.
+It never modifies an existing line or calculates per-subagent duration.
 
-This reference owns the required observation records, review timing records, routine summary, and controlled-comparison schema only. It does not change dispatch validity, precedence, verification requirements, or completion criteria in the parent `SKILL.md`.
+If persistence fails, continue the goal and report the gap. Never reconstruct records, timing, or
+token counts from model recollection, file modification times, or partial worker reports.
 
-## Contents
+## Invocation pair
 
-- [Canonical JSONL envelope](#canonical-jsonl-envelope)
-- [Repository identity](#repository-identity)
-- [Skill-use records](#skill-use-records)
-- [Review timing](#review-timing)
-- [Routine analysis](#routine-analysis)
-- [Controlled comparison protocol](#controlled-comparison-protocol)
+Resolve `repository_id` once with [`repository_id.py`](../scripts/repository_id.py). Reuse the same
+lowercase `host/owner/repository` value and `skill_use_id` for every record.
 
-## Canonical JSONL envelope
-
-Write each line as one JSON object. Include these fields on every new record:
+Append `use_started` before any work or dispatch:
 
 ```json
 {
-  "schema_version": 1,
-  "type": "stable_snake_case_record_type",
-  "created_at": "2026-08-14T12:34:56.789Z",
-  "repository_id": "host/owner/repository",
-  "skill_use_id": "unique invocation ID"
-}
-```
-
-Pass one JSON object without envelope or generated timing fields on standard input:
-
-```sh
-metric_writer="/absolute/path/to/scale-sol-luna-goals/scripts/append_metric.py"
-printf '%s\n' '{"type":"use_checkpoint","status":"active","unresolved_required_work":[]}' | \
-  python3 "$metric_writer" \
-    --repository-id host/owner/repository \
-    --skill-use-id ID
-```
-
-The helper adds `schema_version`, `created_at`, `repository_id`, and `skill_use_id` immediately before appending. It adds start timestamps to start events and calculates finish timestamps and elapsed milliseconds from their persisted start events. Contract writers invoke it with `--role writer`; the default `orchestrator` role writes all other event types. The helper rejects event types outside the selected role. Do not write the log directly or supply generated fields yourself. If the helper cannot obtain a reliable clock or append the record, report the persistence gap instead of inventing values.
-
-Use the exact field names and record types in this reference. Do not substitute camel case, `record`, `record_type`, or prose-only entries. Never infer or backfill timestamps from file modification times, neighboring records, model recollection, or elapsed-time estimates. Treat older records without the canonical envelope as legacy observations with unavailable event timing.
-
-## Repository identity
-
-Resolve the identifier once before the first record:
-
-```sh
-repository_id_resolver="/absolute/path/to/scale-sol-luna-goals/scripts/repository_id.py"
-repository_id="$(python3 "$repository_id_resolver" --repository-root /absolute/repository/root)"
-```
-
-A hosted `repository_id` has exactly three lowercase slash-separated segments:
-
-```text
-<dns-host>/<owner>/<repository>
-```
-
-For example, `git@github.com:programbo/picodash.git` and `https://github.com/programbo/picodash.git` both resolve to `github.com/programbo/picodash`. Omit the transport, user, port, leading slash, trailing slash, and `.git` suffix. Never flatten the segments with hyphens or underscores.
-
-When the selected remote does not exist, the resolver emits:
-
-```text
-local/<repository-name>/<12-character-sha256-prefix-of-absolute-git-common-dir>
-```
-
-Every persistence helper validates this format. Resolve it once and reuse the returned string unchanged for metrics, goal state, artifacts, continuations, and review events.
-
-`goal_id` and `skill_use_id` are single lowercase path-safe segments containing only letters, digits, dots, underscores, and hyphens. UUIDs satisfy this rule. They never contain slashes or transport syntax.
-
-## Skill-use records
-
-At invocation, append `use_started` before dispatching work:
-
-```json
-{
-  "schema_version": 1,
   "type": "use_started",
-  "created_at": "RFC3339 UTC",
-  "repository_id": "host/owner/repository",
-  "skill_use_id": "ID",
-  "goal_id": "goal or continuation ID",
-  "continuation_of": null,
-  "start_fingerprint": "current state fingerprint",
-  "completion_criteria": ["criterion"],
-  "started_at": "RFC3339 UTC"
+  "goal_id": "goal-1",
+  "objective": "Implement the accepted Agent Mail Phase 1 plan.",
+  "start_fingerprint": "commit and relevant dirty state"
 }
 ```
 
-Append one `assignment_outcome` for every accepted, rejected, or stopped assignment:
+Append `use_outcome` after every subagent has a terminal record:
 
 ```json
 {
-  "schema_version": 1,
-  "type": "assignment_outcome",
-  "created_at": "RFC3339 UTC",
-  "repository_id": "host/owner/repository",
-  "skill_use_id": "ID",
-  "assignment_id": "ID",
-  "phase": "research|shaping|implementation|verification",
-  "state_fingerprint": "relevant state",
-  "outcome": "landed|completed-no-change|useful-no-go|failed|aborted|superseded",
-  "evidence": ["artifact, check, commit, or decision pointer"],
-  "rework": null
+  "type": "use_outcome",
+  "status": "success",
+  "result": "Implemented and verified the Agent Mail Phase 1 plan.",
+  "failed_criteria": [],
+  "end_fingerprint": "verified commit and relevant dirty state",
+  "total_goal_tokens": 12345,
+  "token_measurement": "runtime"
 }
 ```
 
-At each review checkpoint, append `use_checkpoint`. Before ending the invocation, append `use_outcome`. Include:
+Use `success`, `failure`, or `blocked`. A successful result has no failed criteria; a failure names
+at least one stable acceptance-check ID. Record a directly measured whole-goal token total when the
+runtime supplies it. Otherwise use `total_goal_tokens: null` and `token_measurement: unavailable`.
+Do not estimate.
 
-- `status`: `active`, `goal-verified`, `user-changed-goal`, `requires-new-authority`, `capability-unavailable`, or `ended-with-required-work`.
-- `unresolved_required_work`: an explicit array, including an empty array when none remains.
-- `observations`: prerequisite, `NO-GO`, and stop adjudications; contract-caused rework; reopened accepted decisions; writer retention and reuse; evidence revalidation or invalidation.
-- `telemetry`: directly measured elapsed time and input, cached-input, reasoning, and output tokens. Use explicit `null` values for unavailable measurements.
-- `completed_at` on `use_outcome`, using the same timestamp rules as `created_at`.
+The runtime owns whole-goal elapsed time. Report its terminal goal telemetry to the user, but do not
+derive or persist elapsed time through this journal.
 
-Record explicit `none`, `ambiguous`, or `unavailable` values rather than omitting an eligible observation. Link continuation invocations to the same goal while giving each invocation its own `skill_use_id`.
+## Subagent pair
 
-## Review timing
-
-An append timestamp alone cannot measure duration. Persist start and finish events around each review cycle and each canonical review step.
-
-Use these step names:
-
-- `prepare`: resolve and fingerprint the exact review target.
-- `wait_for_hosted_review`: wait for the configured hosted reviewer. Use only when applicable.
-- `review_and_shape`: collect findings, normalize them, propose dispositions, and shape contracts.
-- `fix_and_integrate`: execute accepted review contracts and integrate their results. Use only when findings require changes.
-- `verify`: run the required checks and determine the cycle outcome.
-
-Before a cycle begins, append `review_cycle_started`. Before each step begins, append `review_step_started`. Append `review_step_finished` immediately after that step ends, including failures and interruptions. Use one stable `cycle_id` and `step_id` to correlate the events. The helper looks up the corresponding start event and adds `started_at`, `completed_at`, `elapsed_ms`, and `timing_status` to finish records.
+Append `subagent_started` immediately before every subagent dispatch:
 
 ```json
 {
-  "schema_version": 1,
-  "type": "review_step_finished",
-  "created_at": "RFC3339 UTC",
-  "repository_id": "host/owner/repository",
-  "skill_use_id": "ID",
-  "cycle_id": "local-1",
-  "step_id": "local-1-review-and-shape-1",
-  "stage": "local|hosted-pr",
-  "step": "prepare|wait_for_hosted_review|review_and_shape|fix_and_integrate|verify",
-  "attempt": 1,
-  "started_at": "RFC3339 UTC",
-  "completed_at": "RFC3339 UTC",
-  "elapsed_ms": 1234,
-  "timing_status": "measured",
-  "outcome": "completed|completed-no-change|failed|blocked|superseded",
-  "evidence": ["artifact or check pointer"]
+  "type": "subagent_started",
+  "assignment_id": "implementation-1",
+  "parent_assignment_id": null,
+  "role": "luna_worker",
+  "requested_model": null,
+  "requested_reasoning_effort": "medium",
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "medium",
+  "objective": "Implement the bounded storage migration and run its focused tests."
 }
 ```
 
-Give `review_cycle_started` the cycle ID, stage, review source, exact base and head, and `started_at`. Give `review_step_started` the cycle ID, step ID, stage, step, attempt, and `started_at`.
+Append `subagent_outcome` when that dispatch reaches a terminal state:
 
-At the end of every local or hosted cycle, append `review_cycle_outcome` with:
+```json
+{
+  "type": "subagent_outcome",
+  "assignment_id": "implementation-1",
+  "outcome": "completed",
+  "result": "Implemented the migration and passed the focused storage tests."
+}
+```
 
-- the cycle ID, stage, review source, exact base and head;
-- `started_at`, `completed_at`, `elapsed_ms`, and `timing_status`;
-- P0, P1, P2, and P3 finding counts;
-- accepted, rejected, duplicate, and ambiguous finding counts;
-- original, fix-induced, and ambiguous attribution counts;
-- proposed, accepted, rejected, completed, superseded, and dependency-blocked contract counts;
-- stack and manifest pointers;
-- `outcome`: `clean`, `findings`, `stale`, or `blocked`;
-- unresolved finding IDs, required-check result, and resulting head.
+Every start and outcome receives its own generated `created_at`. `objective` and `result` are
+required, non-empty, single-line descriptions. Use requested runtime settings in the start record;
+use `null` when a model or effort was not requested explicitly. `model` and
+`reasoning_effort` record the effective runtime settings and are required non-null values after
+resolving role defaults and inherited settings.
 
-Capture timestamps before doing the work. Do not reconstruct a step start from its finish event. The helper rejects finish records without a matching persisted start. If measurement fails, preserve any start event, report the gap, and treat the duration as unavailable. Do not bypass the helper with guessed or null timing fields.
+Allowed outcomes are `completed`, `useful-no-go`, `failed`, `blocked`, `cancelled`, `interrupted`,
+and `superseded`. Record null, negative, ambiguous, and unavailable results through the applicable
+outcome and concrete result text instead of omitting the dispatch.
 
-Keep the skill-use outcome active while the selected delivery mode has an unfinished gate. A locally clean cycle, draft-to-ready transition, green intermediate CI run, or completed fix batch is not default `goal-verified`. For default delivery, record `goal-verified` only after the exact locally and remotely clean head passes required CI, has zero unresolved review threads, and is merged. For no-PR mode, require the current clean local gate. For no-merge mode, require both clean gates and green required CI, but not merge. Record a capability or authority blocker with the corresponding non-complete outcome.
+For a nested dispatch, set `parent_assignment_id` to the dispatching agent's `assignment_id`. Give
+that agent the journal identity and helper path. The agent that dispatches the child owns the
+child's pair and may append only those observational records. It must not edit prior records or
+write invocation outcomes.
 
-After resolving the canonical remote, store its repository ID exactly as `host/owner/repository` in `use_started` and reuse that path and value for every continuation. Do not create separator variants for the same repository.
+Before appending `use_outcome`, add terminal records for every started subagent. Use `interrupted`,
+`cancelled`, `blocked`, or `failed` when a dispatch did not complete normally. The helper rejects
+duplicate starts, duplicate outcomes, outcomes without starts, missing parents, records after the
+invocation outcome, and terminal invocation outcomes with unfinished subagents.
 
-## Routine analysis
+## Append command
 
-Run [`summarize_metrics.py`](../scripts/summarize_metrics.py) at each review checkpoint and before the final response. Do not wait for a separate user request. Report the measured review-step and cycle totals concisely, including unfinished steps and unavailable timing.
+Pass one payload on standard input:
 
 ```sh
-metrics_reader="/absolute/path/to/scale-sol-luna-goals/scripts/summarize_metrics.py"
-python3 "$metrics_reader" \
+printf '%s\n' "$payload" | python3 /absolute/path/to/append_metric.py \
   --repository-id host/owner/repository \
-  --skill-use-id ID
+  --skill-use-id use-1
 ```
 
-Compare measured elapsed time by review step, review stage, phase, and outcome. Keep hosted-review wait time separate from active review and repair work. Report useful prerequisite or `NO-GO` work separately from failed or abandoned work.
+The helper generates `schema_version`, `created_at`, `repository_id`, and `skill_use_id`. Do not
+supply those envelope fields or the obsolete timing fields `started_at`, `completed_at`,
+`elapsed_ms`, and `timing_status`. Do not record prompts, reasoning traces, per-subagent duration,
+per-subagent token estimates, routine tool calls, review events, or comparison cohorts.
 
-Always retain enough structured observations to assess:
+## Final summary
 
-- whole-goal completion and unresolved required work;
-- confirmed and rejected `PREREQUISITE`, `NO-GO`, and worker stops;
-- discoverable prerequisites missed before implementation;
-- rework caused by contract omission, implementation deviation, new evidence, environment, or external change;
-- accepted public decisions reopened during implementation;
-- writers retained, reused, retired unused, or retired after drift;
-- evidence repeated, revalidated, invalidated, or opened in full by the parent;
-- review corrections and repeated checks without state change; and
-- elapsed time and token classes only when directly measured.
+After `use_outcome`, run [`summarize_metrics.py`](../scripts/summarize_metrics.py). Report the
+invocation status, whole-goal token total when available, subagent count, outcome counts, and any
+unfinished assignment IDs. The summary must not calculate durations.
 
-Do not sum overlapping worker durations and call the result wall-clock time. Use the review-step interval for wall-clock analysis and worker telemetry for compute or token analysis.
-
-## Controlled comparison protocol
-
-When the goal itself is a controlled comparison, append `comparison_started` before examining outcomes. Include the common envelope plus the comparison ID, hypothesis and falsifying observation, comparable task stratum or baseline, adjudicator, and observation window. This adds cohort discipline to routine metrics. It does not gate routine capture, analysis, or reporting.
-
-Include every eligible assignment in the declared cohort, including null, negative, ambiguous, and unavailable results. Preserve measured telemetry separately from retrospective interpretation. Record:
-
-- the denominator for each confirmed or rejected prerequisite, `NO-GO`, and stop;
-- primary and contributing rework causes; and
-- the declared baseline or task stratum for every included result.
-
-Do not infer causality from unmatched tasks or treat model agreement as correctness. Use the observations to challenge existing guidance and form hypotheses, not retroactively justify current rules or create automatic routing policy.
+```sh
+python3 /absolute/path/to/summarize_metrics.py \
+  --repository-id host/owner/repository \
+  --skill-use-id use-1
+```

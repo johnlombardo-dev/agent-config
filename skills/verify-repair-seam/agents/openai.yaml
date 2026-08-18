@@ -1,0 +1,6 @@
+interface:
+  display_name: "Verify Repair Seam"
+  short_description: "Check one fix without reopening the whole diff"
+  default_prompt: "Use $verify-repair-seam to verify this repair, its invariant, and adjacent counterexamples with focused checks."
+policy:
+  allow_implicit_invocation: true
