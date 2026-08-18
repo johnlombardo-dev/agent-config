@@ -8,6 +8,9 @@ This reference owns logical-to-runtime mappings and degraded-capability behavior
 
 - **Contract writer:** high-capability model for bounded research, synthesis, tradeoffs, and contract shaping.
 - **Research assistant:** lowest adequate model for one read-only, objectively answerable question.
+- **High-capability implementer:** highest-capability model with independently selected `high`,
+  `xhigh`, or `max` effort for an
+  indivisible `ESCALATE` outcome that must not be delegated to Luna.
 - **Execution worker:** bounded implementation model operating from frozen decisions and executable checks.
 
 ## Current mapping
@@ -38,11 +41,34 @@ Use the lowest adequate Luna effort:
 | Branchy logic or edge-case-heavy regression work | `high` |
 | Exceptionally demanding but still fully bounded work | `xhigh` |
 
+### High-capability implementer
+
+- Map to GPT-5.6 Sol with `high`, `xhigh`, or `max` effort when the selected exact route is callable
+  and parent-verifiable.
+- Never use `ultra` for this route.
+- Use `high` only to implement a fully frozen state-chart as faithful translation with bounded
+  checks and no protocol design.
+- Use `xhigh` by default to design or semantically verify a state-chart or materially change its
+  protocol.
+- Use `max` only for a named irreducible interaction across nested or parallel states, multiple
+  actors, time, cancellation, retry or recovery, persistence, authority, security, migration, or
+  public consumers. A state-chart label or task size alone does not qualify.
+- When selecting `max`, record the trigger and why `xhigh` is insufficient. Do not use `max` when it
+  is likely to reopen frozen decisions, expand scope, or encourage speculative redesign.
+- Preserve design and implementation ownership together when the escalation says separating them
+  would break the invariant.
+- State-chart design or implementation is a hard member of this route. Luna may handle adjacent
+  mechanical work only when it does not alter states, events, transitions, guards, actions,
+  actors, context ownership, persistence, cancellation, or lifecycle semantics.
+- If the selected exact route is unavailable, keep the outcome pending. Do not silently substitute
+  another model, another effort, or a set of Luna contracts.
+
 ## Degraded capability
 
 - Never claim a model or effort that cannot be verified.
 - Record model or effort as unknown when parent-visible verification evidence is unavailable.
 - Treat an unverified exact route as unavailable whenever the user or task requires that route.
+- Treat every `ESCALATE` outcome as requiring an exact verified high-capability route.
 - When the user's route requires exact Sol or Luna and it is unavailable, continue safe research, shaping, or other independent work; keep execution pending and report the capability gap.
 - Use an alternative model only after an explicit orchestrator decision permitted by the user and state the new assignment. Never silently substitute Terra or another model.
 - If ordinary instructions authorize direct execution and orchestration would cost more, exit the specialized route instead of pretending the work was Luna execution.

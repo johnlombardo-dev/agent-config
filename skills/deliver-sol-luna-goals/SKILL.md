@@ -14,7 +14,7 @@ description: >-
 
 ## Normative ownership, terms, and precedence
 
-This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only Luna profile selection and packet schemas. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [outcome-metrics reference](references/outcome-metrics.md) owns only the optional reporting schema. References must not redefine this file's semantics.
+This file is the sole normative source for role authority, dispatch routing, rule precedence, and the canonical goal loop. The standalone [shape-luna-contract skill](../shape-luna-contract/SKILL.md) owns next-dispatch Luna decomposition, contract validity and profiles, worker-facing schemas, contract-owned QA seams, and parent dispatch records. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [outcome-metrics reference](references/outcome-metrics.md) owns only the optional reporting schema. These sources must not redefine one another's semantics.
 
 - **Worth:** A delegated route's expected context, time, or confidence gain exceeds its setup, review, and integration cost.
 - **Defined:** The outcome, authority, relevant state, and expected return are bounded.
@@ -30,7 +30,7 @@ Apply orchestration rules as ordered filters:
 2. Current capability removes routes that cannot be used or verified as required.
 3. Assignment validity requires Defined, Decision-ready, Safe, and Checkable work.
 4. Worth selects delegation or the fast path among the routes still permitted.
-5. The task-packet profile governs contract detail.
+5. `shape-luna-contract` governs Luna eligibility, high-capability escalation, and each next Luna contract's detail.
 6. Verification rules govern evidence depth and reuse.
 
 Each layer constrains the next; a lower layer never relaxes a higher one. First make the assignment valid, then choose its route. Worth never cures invalidity: for example, Worth but uncheckable work must be redefined rather than dispatched. A required route that is unavailable or invalid remains pending instead of being silently substituted.
@@ -41,6 +41,7 @@ Keep the Sol orchestrator authoritative for the entire goal.
 
 - Sol owns research, Consequential Decisions, sequencing, contract shaping, implementation-worker dispatch, integration, and completion.
 - Luna executes one accepted task with frozen Consequential Decisions. It stops when success requires a decision or scope change and cannot dispatch another agent.
+- A high-capability implementer owns an indivisible `ESCALATE` outcome, including state-chart design or implementation, at the highest-capability verified route. Select reasoning effort independently as `high`, `xhigh`, or `max` under the shaping policy. Never use `ultra`, silently change the selected route, or split such work merely to make it Luna-routable.
 - Give every mutation surface one active owner. Parallel work must be independently acceptable and non-overlapping.
 - Return distilled results and evidence pointers, not raw logs or reasoning traces.
 - A handoff advances the goal loop; it never completes the larger goal by itself.
@@ -52,7 +53,10 @@ Use `scale-sol-luna-goals` when delegating research and contract writing to Sol 
 After assignment validity is established, choose the cheapest permitted route:
 
 - Execute bounded work directly when ordinary instructions and model policy permit and coordination would cost more than implementation.
-- Otherwise shape a Luna task using the profile selected in [references/task-packets.md](references/task-packets.md).
+- Otherwise apply `shape-luna-contract` to produce the next dispatchable contract.
+
+`map-luna-contracts` is not part of this canonical path. Use it only when the user separately asks
+for a whole-problem dependency map or coordinated multi-contract plan.
 
 Dispatch Luna only when it is Worth, Defined, Decision-ready, Safe, and Checkable.
 
@@ -79,18 +83,17 @@ Repeat this loop until the whole goal is verified:
 
 1. **Frame.** Confirm the goal, completion criteria, state, accepted decisions, dependencies, and next meaningful review checkpoint.
 2. **Research.** Investigate only the smallest uncertainty that unlocks valuable work. Stop when enough evidence exists to decide the next outcome; record precise `NO-GO` and prerequisites as useful results.
-3. **Shape.** Choose one dependency-ready outcome, freeze its Consequential Decisions, and select its Luna profile from [references/task-packets.md](references/task-packets.md).
-4. **Dispatch.** Recheck the task fingerprint; treat changed facts, decisions, ownership, constraints, or checks as material drift requiring reshaping. Reserve mutation ownership, verify the current runtime route, and send only worker-facing contract content.
+3. **Shape.** Before each implementation dispatch, read [shape-luna-contract](../shape-luna-contract/SKILL.md) completely and apply it to exactly one dependency-ready outcome. Freeze Consequential Decisions in the main thread. Admit its `READY` Luna contract or preserve its `ESCALATE` outcome for the required high-capability route; feed `PREREQUISITE` or `NO-OP` back into the goal loop. If the skill is unavailable or unreadable, record a capability blocker instead of reconstructing its rules.
+4. **Dispatch.** Recheck the task fingerprint; treat changed facts, decisions, ownership, constraints, dependencies, or checks as material drift requiring reshaping. Reserve mutation ownership, verify the current runtime route, and send only route-appropriate worker content. Never send an `ESCALATE` outcome to Luna.
 5. **Integrate.** Review scope and evidence, run proportionate independent verification, integrate or reject the result, close the worker, and update the ledger.
-6. **Replan or finish.** Feed findings back into the roadmap. Continue from step 2 while required work remains; otherwise run the final goal gate.
+6. **Replan or finish.** Feed findings back into the roadmap. Reapply `shape-luna-contract` while required work remains; otherwise run the final goal gate.
 
 Do not stop because an initial roadmap or one Luna handoff is exhausted. Stop only when the goal is verified, the user changes it, or progress requires new authority, unavailable capability, or an unresolved Consequential Decision.
 
 ## Task and response economy
 
-For Luna Compact/Full task formats and parent-only dispatch records, read [references/task-packets.md](references/task-packets.md) when preparing a dispatch.
+Use [shape-luna-contract](../shape-luna-contract/SKILL.md) for next-dispatch Luna decomposition, profiles, worker-facing task formats, and parent-only records.
 
-- Shape only the next ready task and at most one provisional successor unless stable independent outcomes justify fanout.
 - Require the shortest sufficient worker handoff, with decision-critical nuance, artifacts, concise evidence, and deviations.
 - Use a shared session artifact for necessary long detail only when explicitly authorized and available. Never write into the user's repository merely to shorten a handoff.
 

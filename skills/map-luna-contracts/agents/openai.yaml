@@ -1,0 +1,4 @@
+interface:
+  display_name: "Map Luna Contracts"
+  short_description: "Map dependency-aware Luna contract sets"
+  default_prompt: "Use $map-luna-contracts to map this implementation problem into dependency-aware execution nodes, preserve non-Luna high-capability work, and define shared surfaces, dispatch waves, and unified validation."

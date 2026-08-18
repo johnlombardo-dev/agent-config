@@ -16,7 +16,7 @@ description: >-
 
 ## Normative ownership, terms, and precedence
 
-This file is the sole normative source for role authority, the terms below, dispatch validity, rule precedence, and the canonical goal loop. The [task-packets reference](references/task-packets.md) owns only assignment schemas and Luna profile selection. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [delivery reference](references/delivery.md) owns only Git, PR, CI, and merge mechanics. The [outcome-metrics reference](references/outcome-metrics.md) owns the append-only invocation and subagent record pairs plus the final summary. References must not redefine this file's semantics.
+This file is the sole normative source for role authority, dispatch routing, rule precedence, and the canonical goal loop. The standalone [shape-luna-contract skill](../shape-luna-contract/SKILL.md) owns next-dispatch Luna decomposition, contract validity and profiles, worker-facing schemas, contract-owned QA seams, and parent dispatch records. The [task-packets reference](references/task-packets.md) owns only Sol writer and evidence-check assignment schemas. The [runtime-routing reference](references/runtime-routing.md) owns only logical-to-runtime mappings and degraded-capability behavior. The [delivery reference](references/delivery.md) owns only Git, PR, CI, and merge mechanics. The [outcome-metrics reference](references/outcome-metrics.md) owns the append-only invocation and subagent record pairs plus the final summary. These sources must not redefine one another's semantics.
 
 ## Invocation contract
 
@@ -55,7 +55,7 @@ Apply orchestration rules as ordered filters:
 2. Current capability removes routes that cannot be used or verified as required.
 3. Assignment validity requires Defined, Safe, and Checkable work; Luna work must also be Decision-ready.
 4. Worth selects delegation or the fast path among the routes still permitted.
-5. The task-packet profile governs contract detail.
+5. `shape-luna-contract` governs Luna eligibility, high-capability escalation, and each next Luna contract's detail.
 6. Verification rules govern evidence depth and reuse.
 
 Each layer constrains the next; a lower layer never relaxes a higher one. First make the assignment valid, then choose its route. Worth never cures invalidity: for example, Worth but uncheckable work must be redefined rather than dispatched. A required route that is unavailable or invalid remains pending instead of being silently substituted.
@@ -85,6 +85,7 @@ default merge after a draft delivery.
 - The orchestrator owns the user goal, roadmap, Consequential Decisions, contract acceptance, implementation-worker dispatch, integration, and completion.
 - Sol contract writers research and propose; they do not decide for the orchestrator, implement, integrate, or declare completion. An agent that dispatches a child may append only that child's `subagent_started` and `subagent_outcome` records to the orchestrator-provided journal.
 - Luna executes one accepted task with frozen Consequential Decisions. It stops when success requires a decision or scope change and cannot dispatch another agent.
+- A high-capability implementer owns an indivisible `ESCALATE` outcome, including state-chart design or implementation, at the highest-capability verified route. Select reasoning effort independently as `high`, `xhigh`, or `max` under the shaping policy. Never use `ultra`, silently change the selected route, or split such work merely to make it Luna-routable.
 - Give every mutation surface one active owner. Parallel work must be independently acceptable and non-overlapping.
 - Return distilled findings and evidence pointers, not raw research, logs, or reasoning traces.
 - A handoff advances the goal loop; it never completes the larger goal by itself.
@@ -94,8 +95,11 @@ default merge after a draft delivery.
 After assignment validity is established, choose the cheapest permitted route:
 
 - Execute bounded work directly when ordinary instructions and model policy permit and coordination would cost more than implementation.
-- When implementation should remain with Luna but research is unnecessary, let the orchestrator shape its task packet directly.
+- When implementation should remain with Luna but research is unnecessary, apply `shape-luna-contract` directly in the orchestrator to produce the next dispatchable contract.
 - Use Sol contract writers only when delegated research or shaping saves material main-context work, provides real parallelism, or adds valuable independent confidence.
+
+`map-luna-contracts` is not part of this canonical path. Use it only when the user separately asks
+for a whole-problem dependency map or coordinated multi-contract plan.
 
 Dispatch research or shaping only when it is Worth, Defined, Safe, and Checkable. Dispatch Luna only when those conditions hold and the task is Decision-ready.
 
@@ -149,21 +153,20 @@ Repeat this loop until the whole goal is verified:
 
 1. **Frame.** Confirm the goal, completion criteria, state, accepted decisions, dependencies, and the next meaningful checkpoint.
 2. **Research.** Select the smallest uncertainty that unlocks valuable work. Dispatch a Sol writer only when the dispatch test passes; otherwise research in the main thread. Stop early on a precise `NO-GO` or `PREREQUISITE`.
-3. **Shape.** Resolve Consequential Decisions in the main thread and choose one dependency-ready outcome. Select its Luna profile from [references/task-packets.md](references/task-packets.md).
-4. **Dispatch.** Recheck the task fingerprint; treat changed facts, decisions, ownership, constraints, or checks as material drift requiring re-adjudication. Reserve mutation ownership, verify the current runtime route, and send only worker-facing contract content.
+3. **Shape.** Before each implementation dispatch, read [shape-luna-contract](../shape-luna-contract/SKILL.md) completely and apply it to exactly one dependency-ready outcome. Resolve Consequential Decisions in the main thread. Admit its `READY` Luna contract or preserve its `ESCALATE` outcome for the required high-capability route; feed `PREREQUISITE` or `NO-OP` back into the goal loop. If the skill is unavailable or unreadable, record a capability blocker instead of reconstructing its rules.
+4. **Dispatch.** Recheck the task fingerprint; treat changed facts, decisions, ownership, constraints, dependencies, or checks as material drift requiring reshaping. Reserve mutation ownership, verify the current runtime route, and send only route-appropriate worker content. Never send an `ESCALATE` outcome to Luna.
 5. **Integrate.** Inspect scope and evidence, run proportionate independent verification, integrate or reject the result, close the execution worker, and update the durable ledger. Retain one writer automatically when the reuse rule above applies; otherwise close it.
 6. **Deliver.** Apply the selected delivery mode and the Git, PR, CI, and merge requirements in [references/delivery.md](references/delivery.md). SSLG does not initiate local or hosted code review.
-7. **Replan or finish.** Continue from step 2 while required work remains; otherwise run the final goal gate.
+7. **Replan or finish.** Feed integrated findings, blockers, and scope changes back into the roadmap. Reapply `shape-luna-contract` to choose the next dispatch while required work remains; otherwise run the final goal gate.
 
 Do not stop because an initial roadmap, one writer assignment, one Luna handoff, or a green intermediate commit is exhausted. Stop only when the goal is verified, the user changes it, or progress requires new authority, unavailable capability, or an unresolved Consequential Decision.
 
 ## Research and response economy
 
-For Sol assignment formats, bounded depth-one read-only researchers, and Luna Compact/Full contracts, read [references/task-packets.md](references/task-packets.md) when preparing a dispatch.
+For Sol writer assignments and bounded depth-one read-only researchers, read [references/task-packets.md](references/task-packets.md) when preparing that dispatch. For each Luna worker contract, use [shape-luna-contract](../shape-luna-contract/SKILL.md).
 
 Apply these rules before loading that reference:
 
-- Shape only the next ready task and at most one provisional successor unless stable independent outcomes justify fanout.
 - Start research with a viability scan. Return immediately on `NO-GO` or `PREREQUISITE`; use final `GO` only when the requested result is ready.
 - Let a contract writer use a research child only under a depth-one budget recorded in its task packet and only when the child can answer a small read-only question without inheriting most of the writer's context. The orchestrator may grant this internal budget when the dispatch test passes; it does not require another user request.
 - Require the shortest sufficient response, not an arbitrary bullet count. Preserve decision-critical nuance while excluding repeated facts and exploratory history.
@@ -171,16 +174,10 @@ Apply these rules before loading that reference:
 
 ## Verification and recovery
 
-- Before implementation, name the one or two affected QA seams in the task packet. Use value integrity, accessibility and interaction, public contract, or lifecycle and rendering. Add more only when the change genuinely crosses them.
-- Give each affected seam one invariant, its cheapest faithful check, and one adjacent counterexample that could expose a displaced bug. Prefer compile fixtures, focused unit or component tests, deterministic lifecycle controls, then browser evidence when rendering owns the claim.
-- For value changes, follow an emitted value through validation, canonical mutation, formatting, serialization, and back. For wrappers, compare direct and composed behavior when they promise parity.
-- For interaction changes, test the rendered focus target and applicable input/state combinations. For public contracts, test supported construction forms and runtime guards. For lifecycle changes, test the changed mount, update, hide, cleanup, owner, or remount path.
-- When modes, events, guards, retries, cancellation, or cleanup form a state machine, include the affected transition and failure paths in `DONE WHEN`. Use property checks, differential probes, or targeted mutations only when cheaper examples could pass without exercising the invariant.
 - Let the worker run its `DONE WHEN` checks. Independently rerun an owning or integration check only for public boundaries, integration seams, behavior governed by a Consequential Decision, uncertain evidence, or changed state.
 - Reuse unchanged baselines and successful checks. Run broad repository or release gates only when the repository requires them for final signoff.
 - Distinguish product failure from environmental flakiness. Retry once only with evidence of a transient condition; otherwise record the environment blocker without automatically reshaping sound work.
 - On worker failure, diagnose contract size, implementation error, and environment separately. Split or reduce an oversized task before increasing effort or changing model class.
-- Require focused retirement accounting only for removal, move, rename, or replacement work.
 
 Before any model-specific dispatch, read [references/runtime-routing.md](references/runtime-routing.md). Keep logical role requirements stable and runtime mappings isolated there.
 
