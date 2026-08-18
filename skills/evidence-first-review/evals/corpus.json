@@ -248,6 +248,30 @@
       "lane": "persistence-migration-recovery",
       "project": "generic-backend-typescript",
       "packet": "packets/discovery-outcome-recovery-holdout.md"
+    },
+    {
+      "id": "D-AUTHORITY-RECOVERY-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "security-privacy-trust",
+      "project": "agent-mail",
+      "packet": "packets/discovery-authority-recovery-development.md"
+    },
+    {
+      "id": "D-ADMISSION-MATERIALIZATION-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "security-privacy-trust",
+      "project": "generic-webhook-typescript",
+      "packet": "packets/discovery-admission-materialization-holdout.md"
+    },
+    {
+      "id": "D-APPROVAL-PROVENANCE-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "security-privacy-trust",
+      "project": "generic-deployment-typescript",
+      "packet": "packets/discovery-approval-provenance-holdout.md"
     }
   ]
 }

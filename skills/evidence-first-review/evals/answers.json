@@ -245,6 +245,41 @@
         "critical_lanes": ["persistence-migration-recovery", "operations-configuration-deployment"]
       }
     },
+    "D-AUTHORITY-RECOVERY-DEV": {
+      "findings": [
+        { "id": "F-D-AUTHORITY-RECOVERY-DEV-1", "severity": "P1", "defect_class": "expired-undispatched-recovery-starts-effect" }
+      ],
+      "routing": {
+        "required_lanes": ["security-privacy-trust", "concurrency-workflow-ordering"],
+        "acceptable_lanes": ["security-privacy-trust", "concurrency-workflow-ordering", "persistence-migration-recovery"],
+        "critical_lanes": ["security-privacy-trust"]
+      }
+    },
+    "D-ADMISSION-MATERIALIZATION-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-ADMISSION-MATERIALIZATION-HOLDOUT-1", "severity": "P1", "defect_class": "wrong-scope-caller-triggers-body-materialization" },
+        { "id": "F-D-ADMISSION-MATERIALIZATION-HOLDOUT-2", "severity": "P1", "defect_class": "encoded-body-limit-not-enforced-before-materialization" }
+      ],
+      "routing": {
+        "required_lanes": ["security-privacy-trust", "performance-capacity-backpressure"],
+        "acceptable_lanes": ["security-privacy-trust", "performance-capacity-backpressure", "public-contract"],
+        "critical_lanes": ["security-privacy-trust"]
+      }
+    },
+    "D-APPROVAL-PROVENANCE-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-APPROVAL-PROVENANCE-HOLDOUT-1", "severity": "P1", "defect_class": "default-credential-can-self-approve-and-commit" },
+        { "id": "F-D-APPROVAL-PROVENANCE-HOLDOUT-2", "severity": "P1", "defect_class": "client-actor-controls-durable-approval-attribution" },
+        { "id": "F-D-APPROVAL-PROVENANCE-HOLDOUT-3", "severity": "P1", "defect_class": "approval-not-bound-to-exact-digest-and-targets" },
+        { "id": "F-D-APPROVAL-PROVENANCE-HOLDOUT-4", "severity": "P1", "defect_class": "durable-approval-never-expires" },
+        { "id": "F-D-APPROVAL-PROVENANCE-HOLDOUT-5", "severity": "P1", "defect_class": "approval-consumption-is-not-single-use" }
+      ],
+      "routing": {
+        "required_lanes": ["security-privacy-trust", "domain-value-integrity", "persistence-migration-recovery", "concurrency-workflow-ordering"],
+        "acceptable_lanes": ["security-privacy-trust", "domain-value-integrity", "persistence-migration-recovery", "concurrency-workflow-ordering"],
+        "critical_lanes": ["security-privacy-trust"]
+      }
+    },
     "R-VALUE-DEV": {
       "findings": [
         { "id": "F-R-VALUE-DEV-1", "severity": "P2", "defect_class": "repair-suppresses-first-user-edit" }
