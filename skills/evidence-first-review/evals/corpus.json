@@ -1,11 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "cases": [
     {
       "id": "D-VALUE-DEV",
       "kind": "discovery",
       "split": "development",
-      "lane": "value-integrity",
+      "lane": "domain-value-integrity",
       "project": "picodash",
       "packet": "packets/discovery-value-development.md"
     },
@@ -29,7 +29,7 @@
       "id": "D-LIFECYCLE-DEV",
       "kind": "discovery",
       "split": "development",
-      "lane": "lifecycle-rendering",
+      "lane": "lifecycle-resource-ownership",
       "project": "picodash",
       "packet": "packets/discovery-lifecycle-development.md"
     },
@@ -37,7 +37,7 @@
       "id": "D-VALUE-HOLDOUT",
       "kind": "discovery",
       "split": "holdout",
-      "lane": "value-integrity",
+      "lane": "domain-value-integrity",
       "project": "picodash",
       "packet": "packets/discovery-value-holdout.md"
     },
@@ -61,7 +61,7 @@
       "id": "D-LIFECYCLE-HOLDOUT",
       "kind": "discovery",
       "split": "holdout",
-      "lane": "lifecycle-rendering",
+      "lane": "lifecycle-resource-ownership",
       "project": "generic-react-typescript",
       "packet": "packets/discovery-lifecycle-holdout.md"
     },
@@ -85,7 +85,7 @@
       "id": "R-VALUE-DEV",
       "kind": "repair",
       "split": "development",
-      "lane": "value-integrity",
+      "lane": "domain-value-integrity",
       "project": "picodash",
       "packet": "packets/repair-value-development.md"
     },
@@ -101,7 +101,7 @@
       "id": "R-VALUE-HOLDOUT",
       "kind": "repair",
       "split": "holdout",
-      "lane": "value-integrity",
+      "lane": "domain-value-integrity",
       "project": "generic-react-typescript",
       "packet": "packets/repair-value-holdout.md"
     },
@@ -125,7 +125,7 @@
       "id": "R-LIFECYCLE-HOLDOUT",
       "kind": "repair",
       "split": "holdout",
-      "lane": "lifecycle-rendering",
+      "lane": "lifecycle-resource-ownership",
       "project": "picodash",
       "packet": "packets/repair-lifecycle-holdout.md"
     },
@@ -136,6 +136,118 @@
       "lane": "control",
       "project": "generic-react-typescript",
       "packet": "packets/repair-control-holdout.md"
+    },
+    {
+      "id": "D-SECURITY-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "security-privacy-trust",
+      "project": "agent-mail",
+      "packet": "packets/discovery-security-development.md"
+    },
+    {
+      "id": "D-SECURITY-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "security-privacy-trust",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-security-holdout.md"
+    },
+    {
+      "id": "D-PERSISTENCE-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "persistence-migration-recovery",
+      "project": "agent-mail",
+      "packet": "packets/discovery-persistence-development.md"
+    },
+    {
+      "id": "D-PERSISTENCE-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "persistence-migration-recovery",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-persistence-holdout.md"
+    },
+    {
+      "id": "D-CONCURRENCY-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "concurrency-workflow-ordering",
+      "project": "agent-mail",
+      "packet": "packets/discovery-concurrency-development.md"
+    },
+    {
+      "id": "D-CONCURRENCY-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "concurrency-workflow-ordering",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-concurrency-holdout.md"
+    },
+    {
+      "id": "D-PERFORMANCE-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "performance-capacity-backpressure",
+      "project": "agent-mail",
+      "packet": "packets/discovery-performance-development.md"
+    },
+    {
+      "id": "D-PERFORMANCE-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "performance-capacity-backpressure",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-performance-holdout.md"
+    },
+    {
+      "id": "D-PROTOCOL-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "external-protocol-integration",
+      "project": "agent-mail",
+      "packet": "packets/discovery-protocol-development.md"
+    },
+    {
+      "id": "D-PROTOCOL-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "external-protocol-integration",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-protocol-holdout.md"
+    },
+    {
+      "id": "D-OPERATIONS-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "operations-configuration-deployment",
+      "project": "agent-mail",
+      "packet": "packets/discovery-operations-development.md"
+    },
+    {
+      "id": "D-OPERATIONS-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "operations-configuration-deployment",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-operations-holdout.md"
+    },
+    {
+      "id": "D-COMPOSED-PUBLICATION-DEV",
+      "kind": "discovery",
+      "split": "development",
+      "lane": "concurrency-workflow-ordering",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-composed-publication-development.md"
+    },
+    {
+      "id": "D-OUTCOME-RECOVERY-HOLDOUT",
+      "kind": "discovery",
+      "split": "holdout",
+      "lane": "persistence-migration-recovery",
+      "project": "generic-backend-typescript",
+      "packet": "packets/discovery-outcome-recovery-holdout.md"
     }
   ]
 }

@@ -119,6 +119,8 @@ class InvocationLogTests(unittest.TestCase):
                 "role": "luna_worker",
                 "requested_model": None,
                 "requested_reasoning_effort": "medium",
+                "model": "gpt-5.6-luna",
+                "reasoning_effort": "medium",
                 "objective": objective,
             },
         )
@@ -344,6 +346,8 @@ class InvocationLogTests(unittest.TestCase):
                     "role": "worker",
                     "requested_model": None,
                     "requested_reasoning_effort": None,
+                    "model": "gpt-5.6-luna",
+                    "reasoning_effort": "medium",
                 },
             )
             self.assertNotEqual(missing_objective.returncode, 0)
@@ -388,6 +392,8 @@ class InvocationLogTests(unittest.TestCase):
                     "role": "worker",
                     "requested_model": None,
                     "requested_reasoning_effort": None,
+                    "model": "gpt-5.6-luna",
+                    "reasoning_effort": "medium",
                     "objective": "Do the child task.",
                 },
             )
@@ -403,6 +409,8 @@ class InvocationLogTests(unittest.TestCase):
                     "role": "worker",
                     "requested_model": None,
                     "requested_reasoning_effort": None,
+                    "model": "gpt-5.6-luna",
+                    "reasoning_effort": "medium",
                     "objective": "Repeat the task.",
                 },
             )
@@ -423,6 +431,8 @@ class InvocationLogTests(unittest.TestCase):
                     "role": "worker",
                     "requested_model": None,
                     "requested_reasoning_effort": None,
+                    "model": "gpt-5.6-luna",
+                    "reasoning_effort": "medium",
                     "objective": "Start too late.",
                 },
             )

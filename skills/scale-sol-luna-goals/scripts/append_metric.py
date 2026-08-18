@@ -26,6 +26,8 @@ PAYLOAD_FIELDS = {
         "role",
         "requested_model",
         "requested_reasoning_effort",
+        "model",
+        "reasoning_effort",
         "objective",
     },
     "subagent_outcome": {"type", "assignment_id", "outcome", "result"},
@@ -151,6 +153,8 @@ def validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
         require_optional_one_line_string(
             payload["requested_reasoning_effort"], "requested_reasoning_effort"
         )
+        require_one_line_string(payload["model"], "model")
+        require_one_line_string(payload["reasoning_effort"], "reasoning_effort")
         require_one_line_string(payload["objective"], "objective")
         return payload
 

@@ -49,33 +49,40 @@ class ScoreBenchmarkTests(unittest.TestCase):
         records: list[dict[str, object]] = []
         for approach, case_id in sorted(self.required_pairs()):
             case = self.cases[case_id]
-            expected_ids = [finding["id"] for finding in self.answers[case_id]]
+            expected_ids = [
+                finding["id"] for finding in self.answers[case_id]["findings"]
+            ]
             if approach == "review-agent":
                 detected = expected_ids if case["split"] == "development" else expected_ids[:1]
                 if case["kind"] == "discovery" and case["split"] == "holdout" and case["lane"] in {
                     "public-contract",
-                    "lifecycle-rendering",
+                    "lifecycle-resource-ownership",
                 }:
                     detected = []
                 tokens = 100
             else:
                 detected = expected_ids
                 tokens = candidate_cost
-            records.append(
-                {
-                    "approach": approach,
-                    "case_id": case_id,
-                    "detected_finding_ids": detected,
-                    "false_positives": 0,
-                    "input_tokens": tokens,
-                    "output_tokens": 0,
-                    "elapsed_ms": tokens,
-                }
-            )
+            record = {
+                "approach": approach,
+                "case_id": case_id,
+                "detected_finding_ids": detected,
+                "false_positives": 0,
+                "input_tokens": tokens,
+                "output_tokens": 0,
+                "elapsed_ms": tokens,
+            }
+            if approach == "evidence-first-review":
+                record["selected_lanes"] = self.answers[case_id]["routing"][
+                    "required_lanes"
+                ]
+            records.append(record)
         return records
 
     def validate(self, records: list[dict[str, object]]):
-        return score_benchmark.validate_results(records, self.cases, self.required_pairs())
+        return score_benchmark.validate_results(
+            records, self.cases, self.required_pairs(), "evidence-first-review"
+        )
 
     def report(self, records: list[dict[str, object]]):
         return score_benchmark.build_report(
@@ -88,18 +95,42 @@ class ScoreBenchmarkTests(unittest.TestCase):
         )
 
     def test_shipped_corpus_is_complete_and_blind(self) -> None:
-        self.assertEqual(len(self.cases), 17)
+        self.assertEqual(len(self.cases), 31)
         self.assertEqual(
             {case["lane"] for case in self.cases.values()},
             {
-                "value-integrity",
+                "domain-value-integrity",
                 "accessibility-interaction",
                 "public-contract",
-                "lifecycle-rendering",
+                "lifecycle-resource-ownership",
+                "security-privacy-trust",
+                "persistence-migration-recovery",
+                "concurrency-workflow-ordering",
+                "performance-capacity-backpressure",
+                "external-protocol-integration",
+                "operations-configuration-deployment",
                 "control",
             },
         )
         self.assertIn("generic-react-typescript", {case["project"] for case in self.cases.values()})
+
+    def test_shipped_corpus_contains_cross_boundary_cases(self) -> None:
+        expected_routes = {
+            "D-COMPOSED-PUBLICATION-DEV": {
+                "concurrency-workflow-ordering",
+                "persistence-migration-recovery",
+                "external-protocol-integration",
+            },
+            "D-OUTCOME-RECOVERY-HOLDOUT": {
+                "persistence-migration-recovery",
+                "operations-configuration-deployment",
+            },
+        }
+        for case_id, expected in expected_routes.items():
+            self.assertEqual(
+                set(self.answers[case_id]["routing"]["required_lanes"]),
+                expected,
+            )
 
     def test_answer_id_or_defect_class_leak_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -110,13 +141,13 @@ class ScoreBenchmarkTests(unittest.TestCase):
                     "id": "case",
                     "kind": "discovery",
                     "split": "holdout",
-                    "lane": "value-integrity",
+                    "lane": "domain-value-integrity",
                     "project": "fixture",
                     "packet": "packet.md",
                 }
             }
             answers = {
-                "schema_version": 1,
+                "schema_version": 2,
                 "answers": {
                     "case": {
                         "findings": [
@@ -125,7 +156,12 @@ class ScoreBenchmarkTests(unittest.TestCase):
                                 "severity": "P2",
                                 "defect_class": "hidden-defect-class",
                             }
-                        ]
+                        ],
+                        "routing": {
+                            "required_lanes": ["domain-value-integrity"],
+                            "acceptable_lanes": ["domain-value-integrity"],
+                            "critical_lanes": [],
+                        },
                     }
                 },
             }
@@ -151,8 +187,68 @@ class ScoreBenchmarkTests(unittest.TestCase):
 
     def test_zero_baseline_recall_does_not_make_zero_candidate_recall_a_gain(self) -> None:
         baseline = {"weighted_recall": 0.0, "precision": 1.0, "total_tokens": 100}
-        candidate = {"weighted_recall": 0.0, "precision": 1.0, "total_tokens": 100}
+        candidate = {
+            "weighted_recall": 0.0,
+            "precision": 1.0,
+            "total_tokens": 100,
+            "routing": {
+                "available": True,
+                "critical_lane_recall": 1.0,
+                "weighted_required_lane_recall": 1.0,
+                "routing_precision": 1.0,
+            },
+        }
         self.assertFalse(score_benchmark.discovery_passes(candidate, baseline))
+
+    def test_routing_gate_rejects_missed_critical_lane(self) -> None:
+        records = self.make_results()
+        record = next(
+            item
+            for item in records
+            if item["approach"] == "evidence-first-review"
+            and item["case_id"] == "D-SECURITY-HOLDOUT"
+        )
+        record["selected_lanes"] = []
+        report = self.report(records)
+        routing = report["approaches"]["evidence-first-review"]["discovery"][
+            "holdout"
+        ]["routing"]
+        self.assertLess(routing["critical_lane_recall"], 1.0)
+        self.assertFalse(report["gates"]["discovery"]["passed"])
+
+    def test_routing_gate_rejects_overselection(self) -> None:
+        records = self.make_results()
+        for record in records:
+            if record["approach"] == "evidence-first-review" and self.cases[
+                record["case_id"]
+            ]["split"] == "holdout":
+                record["selected_lanes"] = sorted(score_benchmark.REVIEW_LANES)
+        report = self.report(records)
+        routing = report["approaches"]["evidence-first-review"]["discovery"][
+            "holdout"
+        ]["routing"]
+        self.assertLess(routing["routing_precision"], 0.75)
+        self.assertFalse(report["gates"]["discovery"]["passed"])
+
+    def test_unknown_selected_lane_is_rejected(self) -> None:
+        records = self.make_results()
+        record = next(
+            item for item in records if item["approach"] == "evidence-first-review"
+        )
+        record["selected_lanes"] = ["everything"]
+        with self.assertRaisesRegex(score_benchmark.BenchmarkError, "unknown lanes"):
+            self.validate(records)
+
+    def test_candidate_discovery_requires_selected_lanes(self) -> None:
+        records = self.make_results()
+        record = next(
+            item
+            for item in records
+            if item["approach"] == "evidence-first-review"
+        )
+        del record["selected_lanes"]
+        with self.assertRaisesRegex(score_benchmark.BenchmarkError, "selected_lanes"):
+            self.validate(records)
 
     def test_unknown_detected_id_counts_as_false_positive(self) -> None:
         records = self.make_results()

@@ -156,6 +156,8 @@ def validate_records(
             require_one_line_string(record, "role")
             require_optional_one_line_string(record, "requested_model")
             require_optional_one_line_string(record, "requested_reasoning_effort")
+            require_one_line_string(record, "model")
+            require_one_line_string(record, "reasoning_effort")
             require_one_line_string(record, "objective")
             starts[assignment_id] = record
         elif record_type == "subagent_outcome":
@@ -190,6 +192,8 @@ def validate_records(
                 "role": start.get("role"),
                 "requested_model": start.get("requested_model"),
                 "requested_reasoning_effort": start.get("requested_reasoning_effort"),
+                "model": start.get("model"),
+                "reasoning_effort": start.get("reasoning_effort"),
                 "objective": start.get("objective"),
                 "started_created_at": start.get("created_at"),
                 "outcome": outcome.get("outcome") if outcome else None,

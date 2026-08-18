@@ -14,13 +14,22 @@ from typing import Any
 SEVERITY_WEIGHTS = {"P0": 8, "P1": 5, "P2": 3, "P3": 1}
 KINDS = {"discovery", "repair"}
 SPLITS = {"development", "holdout"}
-LANES = {
-    "value-integrity",
+REVIEW_LANES = {
+    "domain-value-integrity",
     "accessibility-interaction",
     "public-contract",
-    "lifecycle-rendering",
-    "control",
+    "lifecycle-resource-ownership",
+    "security-privacy-trust",
+    "persistence-migration-recovery",
+    "concurrency-workflow-ordering",
+    "performance-capacity-backpressure",
+    "external-protocol-integration",
+    "operations-configuration-deployment",
 }
+CASE_LANES = REVIEW_LANES | {"control"}
+CRITICAL_LANE_WEIGHT = 5
+ROUTING_RECALL_GATE = 0.90
+ROUTING_PRECISION_GATE = 0.75
 
 
 class BenchmarkError(ValueError):
@@ -61,8 +70,8 @@ def require_keys(value: dict[str, Any], keys: set[str], label: str) -> None:
 
 
 def validate_corpus(corpus: Any, root: Path) -> dict[str, dict[str, Any]]:
-    if not isinstance(corpus, dict) or corpus.get("schema_version") != 1:
-        raise BenchmarkError("corpus must use schema_version 1")
+    if not isinstance(corpus, dict) or corpus.get("schema_version") != 2:
+        raise BenchmarkError("corpus must use schema_version 2")
     cases = corpus.get("cases")
     if not isinstance(cases, list) or not cases:
         raise BenchmarkError("corpus cases must be a non-empty array")
@@ -82,7 +91,7 @@ def validate_corpus(corpus: Any, root: Path) -> dict[str, dict[str, Any]]:
             raise BenchmarkError(f"{case_id} has invalid kind")
         if case["split"] not in SPLITS:
             raise BenchmarkError(f"{case_id} has invalid split")
-        if case["lane"] not in LANES:
+        if case["lane"] not in CASE_LANES:
             raise BenchmarkError(f"{case_id} has invalid lane")
         if not isinstance(case["project"], str) or not case["project"]:
             raise BenchmarkError(f"{case_id} project must be a non-empty string")
@@ -93,14 +102,27 @@ def validate_corpus(corpus: Any, root: Path) -> dict[str, dict[str, Any]]:
     return indexed
 
 
-def validate_answers(answers: Any, cases: dict[str, dict[str, Any]], corpus_root: Path) -> dict[str, list[dict[str, str]]]:
-    if not isinstance(answers, dict) or answers.get("schema_version") != 1:
-        raise BenchmarkError("answers must use schema_version 1")
+def validate_lane_list(value: Any, label: str) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise BenchmarkError(f"{label} must be a string array")
+    if len(value) != len(set(value)):
+        raise BenchmarkError(f"{label} contains duplicates")
+    unknown = sorted(set(value) - REVIEW_LANES)
+    if unknown:
+        raise BenchmarkError(f"{label} contains unknown lanes: {', '.join(unknown)}")
+    return value
+
+
+def validate_answers(
+    answers: Any, cases: dict[str, dict[str, Any]], corpus_root: Path
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(answers, dict) or answers.get("schema_version") != 2:
+        raise BenchmarkError("answers must use schema_version 2")
     raw_answers = answers.get("answers")
     if not isinstance(raw_answers, dict) or set(raw_answers) != set(cases):
         raise BenchmarkError("answers must contain exactly one entry for every corpus case")
 
-    indexed: dict[str, list[dict[str, str]]] = {}
+    indexed: dict[str, dict[str, Any]] = {}
     finding_ids: set[str] = set()
     for case_id, answer in raw_answers.items():
         if not isinstance(answer, dict) or not isinstance(answer.get("findings"), list):
@@ -131,7 +153,36 @@ def validate_answers(answers: Any, cases: dict[str, dict[str, Any]], corpus_root
         ]
         if leaked:
             raise BenchmarkError(f"{case_id} packet leaks answer ids: {', '.join(leaked)}")
-        indexed[case_id] = findings
+        routing = answer.get("routing")
+        if cases[case_id]["kind"] == "discovery":
+            if not isinstance(routing, dict):
+                raise BenchmarkError(f"answer for {case_id} must contain routing")
+            require_keys(
+                routing,
+                {"required_lanes", "acceptable_lanes", "critical_lanes"},
+                f"routing for {case_id}",
+            )
+            required = validate_lane_list(
+                routing["required_lanes"], f"required_lanes for {case_id}"
+            )
+            acceptable = validate_lane_list(
+                routing["acceptable_lanes"], f"acceptable_lanes for {case_id}"
+            )
+            critical = validate_lane_list(
+                routing["critical_lanes"], f"critical_lanes for {case_id}"
+            )
+            if not set(critical).issubset(required):
+                raise BenchmarkError(f"critical_lanes for {case_id} must be required")
+            if not set(required).issubset(acceptable):
+                raise BenchmarkError(f"required_lanes for {case_id} must be acceptable")
+            routing = {
+                "required_lanes": required,
+                "acceptable_lanes": acceptable,
+                "critical_lanes": critical,
+            }
+        elif routing is not None:
+            raise BenchmarkError(f"repair answer for {case_id} must not contain routing")
+        indexed[case_id] = {"findings": findings, "routing": routing}
     return indexed
 
 
@@ -139,6 +190,7 @@ def validate_results(
     records: list[dict[str, Any]],
     cases: dict[str, dict[str, Any]],
     required_pairs: set[tuple[str, str]],
+    discovery_candidate: str,
 ) -> dict[tuple[str, str], dict[str, Any]]:
     indexed: dict[tuple[str, str], dict[str, Any]] = {}
     required = {
@@ -176,6 +228,13 @@ def validate_results(
             not isinstance(elapsed, int) or isinstance(elapsed, bool) or elapsed < 0
         ):
             raise BenchmarkError(f"{label} elapsed_ms must be null or a non-negative integer")
+        requires_routing = (
+            approach == discovery_candidate and cases[case_id]["kind"] == "discovery"
+        )
+        if requires_routing and "selected_lanes" not in record:
+            raise BenchmarkError(f"{label} must contain selected_lanes")
+        if "selected_lanes" in record:
+            validate_lane_list(record["selected_lanes"], f"{label} selected_lanes")
         indexed[key] = record
 
     missing = sorted(required_pairs - indexed.keys())
@@ -188,7 +247,7 @@ def validate_results(
 def score_slice(
     *,
     cases: dict[str, dict[str, Any]],
-    answers: dict[str, list[dict[str, str]]],
+    answers: dict[str, dict[str, Any]],
     results: dict[tuple[str, str], dict[str, Any]],
     approach: str,
     kind: str,
@@ -206,7 +265,9 @@ def score_slice(
     elapsed_available = True
 
     for case_id in case_ids:
-        expected = {finding["id"]: finding for finding in answers[case_id]}
+        expected = {
+            finding["id"]: finding for finding in answers[case_id]["findings"]
+        }
         record = results[(approach, case_id)]
         detected = set(record["detected_finding_ids"])
         unknown = detected - expected.keys()
@@ -241,6 +302,62 @@ def score_slice(
     return metrics
 
 
+def score_routing(
+    *,
+    cases: dict[str, dict[str, Any]],
+    answers: dict[str, dict[str, Any]],
+    results: dict[tuple[str, str], dict[str, Any]],
+    approach: str,
+    split: str,
+) -> dict[str, Any]:
+    case_ids = [
+        case_id
+        for case_id, case in cases.items()
+        if case["kind"] == "discovery" and case["split"] == split
+    ]
+    available = True
+    required_weight = 0
+    selected_required_weight = 0
+    critical_total = 0
+    critical_selected = 0
+    acceptable_selected = 0
+    selected_total = 0
+
+    for case_id in case_ids:
+        record = results[(approach, case_id)]
+        if "selected_lanes" not in record:
+            available = False
+            continue
+        selected = set(record["selected_lanes"])
+        routing = answers[case_id]["routing"]
+        required = set(routing["required_lanes"])
+        acceptable = set(routing["acceptable_lanes"])
+        critical = set(routing["critical_lanes"])
+        for lane in required:
+            weight = CRITICAL_LANE_WEIGHT if lane in critical else 1
+            required_weight += weight
+            if lane in selected:
+                selected_required_weight += weight
+        critical_total += len(critical)
+        critical_selected += len(critical & selected)
+        acceptable_selected += len(acceptable & selected)
+        selected_total += len(selected)
+
+    return {
+        "available": available,
+        "critical_lane_recall": (
+            critical_selected / critical_total if critical_total else 1.0
+        ) if available else None,
+        "weighted_required_lane_recall": (
+            selected_required_weight / required_weight if required_weight else 1.0
+        ) if available else None,
+        "routing_precision": (
+            acceptable_selected / selected_total if selected_total else 1.0
+        ) if available else None,
+        "selected_lane_count": selected_total if available else None,
+    }
+
+
 def cost_ratio(candidate: dict[str, Any], baseline: dict[str, Any]) -> float | None:
     if baseline["total_tokens"] == 0:
         return None
@@ -260,7 +377,15 @@ def discovery_passes(candidate: dict[str, Any], baseline: dict[str, Any]) -> boo
         and ratio is not None
         and ratio <= 0.60
     )
-    return precision_ok and (recall_gain or equal_recall_lower_cost)
+    routing = candidate.get("routing")
+    routing_ok = bool(
+        routing
+        and routing["available"]
+        and routing["critical_lane_recall"] == 1.0
+        and routing["weighted_required_lane_recall"] >= ROUTING_RECALL_GATE
+        and routing["routing_precision"] >= ROUTING_PRECISION_GATE
+    )
+    return routing_ok and precision_ok and (recall_gain or equal_recall_lower_cost)
 
 
 def repair_passes(candidate: dict[str, Any], baseline: dict[str, Any]) -> bool:
@@ -275,7 +400,7 @@ def repair_passes(candidate: dict[str, Any], baseline: dict[str, Any]) -> bool:
 
 def build_report(
     cases: dict[str, dict[str, Any]],
-    answers: dict[str, list[dict[str, str]]],
+    answers: dict[str, dict[str, Any]],
     results: dict[tuple[str, str], dict[str, Any]],
     baseline: str,
     discovery_candidate: str,
@@ -284,7 +409,7 @@ def build_report(
 ) -> dict[str, Any]:
     selected_splits = splits or SPLITS
     report: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "approaches": {
             baseline: {
                 kind: {
@@ -328,6 +453,17 @@ def build_report(
             },
         },
     }
+
+    for split in sorted(selected_splits):
+        report["approaches"][discovery_candidate]["discovery"][split]["routing"] = (
+            score_routing(
+                cases=cases,
+                answers=answers,
+                results=results,
+                approach=discovery_candidate,
+                split=split,
+            )
+        )
 
     report["gates"] = {}
     if "holdout" in selected_splits:
@@ -384,7 +520,9 @@ def main(argv: list[str] | None = None) -> int:
             for case_id, case in selected_cases.items()
             if case["kind"] == "repair"
         }
-        results = validate_results(load_jsonl(args.results), cases, required_pairs)
+        results = validate_results(
+            load_jsonl(args.results), cases, required_pairs, args.discovery_candidate
+        )
         report = build_report(
             cases,
             answers,

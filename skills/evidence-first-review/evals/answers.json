@@ -1,155 +1,281 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "answers": {
     "D-VALUE-DEV": {
       "findings": [
-        {
-          "id": "F-D-VALUE-DEV-1",
-          "severity": "P2",
-          "defect_class": "silent-controlled-normalization"
-        },
-        {
-          "id": "F-D-VALUE-DEV-2",
-          "severity": "P2",
-          "defect_class": "invalid-draft-coercion"
-        }
-      ]
+        { "id": "F-D-VALUE-DEV-1", "severity": "P2", "defect_class": "silent-controlled-normalization" },
+        { "id": "F-D-VALUE-DEV-2", "severity": "P2", "defect_class": "invalid-draft-coercion" }
+      ],
+      "routing": {
+        "required_lanes": ["domain-value-integrity"],
+        "acceptable_lanes": ["domain-value-integrity", "public-contract"],
+        "critical_lanes": ["domain-value-integrity"]
+      }
     },
     "D-A11Y-DEV": {
       "findings": [
-        {
-          "id": "F-D-A11Y-DEV-1",
-          "severity": "P2",
-          "defect_class": "focusable-readonly-target-uncommunicated"
-        }
-      ]
+        { "id": "F-D-A11Y-DEV-1", "severity": "P2", "defect_class": "focusable-readonly-target-uncommunicated" }
+      ],
+      "routing": {
+        "required_lanes": ["accessibility-interaction"],
+        "acceptable_lanes": ["accessibility-interaction"],
+        "critical_lanes": ["accessibility-interaction"]
+      }
     },
     "D-CONTRACT-DEV": {
       "findings": [
-        {
-          "id": "F-D-CONTRACT-DEV-1",
-          "severity": "P2",
-          "defect_class": "component-props-domain-erasure"
-        }
-      ]
+        { "id": "F-D-CONTRACT-DEV-1", "severity": "P2", "defect_class": "component-props-domain-erasure" }
+      ],
+      "routing": {
+        "required_lanes": ["public-contract"],
+        "acceptable_lanes": ["public-contract", "domain-value-integrity"],
+        "critical_lanes": ["public-contract"]
+      }
     },
     "D-LIFECYCLE-DEV": {
       "findings": [
-        {
-          "id": "F-D-LIFECYCLE-DEV-1",
-          "severity": "P2",
-          "defect_class": "caller-ref-overwritten"
-        }
-      ]
+        { "id": "F-D-LIFECYCLE-DEV-1", "severity": "P2", "defect_class": "caller-ref-overwritten" }
+      ],
+      "routing": {
+        "required_lanes": ["lifecycle-resource-ownership"],
+        "acceptable_lanes": ["lifecycle-resource-ownership", "accessibility-interaction"],
+        "critical_lanes": ["lifecycle-resource-ownership"]
+      }
     },
     "D-VALUE-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-D-VALUE-HOLDOUT-1",
-          "severity": "P2",
-          "defect_class": "unavailable-controlled-value-loss"
-        }
-      ]
+        { "id": "F-D-VALUE-HOLDOUT-1", "severity": "P2", "defect_class": "unavailable-controlled-value-loss" }
+      ],
+      "routing": {
+        "required_lanes": ["domain-value-integrity"],
+        "acceptable_lanes": ["domain-value-integrity", "public-contract"],
+        "critical_lanes": ["domain-value-integrity"]
+      }
     },
     "D-A11Y-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-D-A11Y-HOLDOUT-1",
-          "severity": "P1",
-          "defect_class": "nested-overlay-under-parent"
-        }
-      ]
+        { "id": "F-D-A11Y-HOLDOUT-1", "severity": "P1", "defect_class": "nested-overlay-under-parent" }
+      ],
+      "routing": {
+        "required_lanes": ["accessibility-interaction"],
+        "acceptable_lanes": ["accessibility-interaction", "lifecycle-resource-ownership"],
+        "critical_lanes": ["accessibility-interaction"]
+      }
     },
     "D-CONTRACT-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-D-CONTRACT-HOLDOUT-1",
-          "severity": "P2",
-          "defect_class": "controlled-prop-authority-leak"
-        }
-      ]
+        { "id": "F-D-CONTRACT-HOLDOUT-1", "severity": "P2", "defect_class": "controlled-prop-authority-leak" }
+      ],
+      "routing": {
+        "required_lanes": ["public-contract"],
+        "acceptable_lanes": ["public-contract", "domain-value-integrity"],
+        "critical_lanes": ["public-contract"]
+      }
     },
     "D-LIFECYCLE-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-D-LIFECYCLE-HOLDOUT-1",
-          "severity": "P2",
-          "defect_class": "subscription-before-first-observation"
-        },
-        {
-          "id": "F-D-LIFECYCLE-HOLDOUT-2",
-          "severity": "P2",
-          "defect_class": "document-visibility-not-tracked"
-        }
-      ]
+        { "id": "F-D-LIFECYCLE-HOLDOUT-1", "severity": "P2", "defect_class": "subscription-before-first-observation" },
+        { "id": "F-D-LIFECYCLE-HOLDOUT-2", "severity": "P2", "defect_class": "document-visibility-not-tracked" }
+      ],
+      "routing": {
+        "required_lanes": ["lifecycle-resource-ownership"],
+        "acceptable_lanes": ["lifecycle-resource-ownership", "accessibility-interaction"],
+        "critical_lanes": ["lifecycle-resource-ownership"]
+      }
     },
     "D-CONTROL-DEV": {
-      "findings": []
+      "findings": [],
+      "routing": {
+        "required_lanes": ["lifecycle-resource-ownership"],
+        "acceptable_lanes": ["lifecycle-resource-ownership"],
+        "critical_lanes": []
+      }
     },
     "D-CONTROL-HOLDOUT": {
-      "findings": []
+      "findings": [],
+      "routing": {
+        "required_lanes": ["domain-value-integrity"],
+        "acceptable_lanes": ["domain-value-integrity"],
+        "critical_lanes": []
+      }
+    },
+    "D-SECURITY-DEV": {
+      "findings": [
+        { "id": "F-D-SECURITY-DEV-1", "severity": "P1", "defect_class": "trusted-proxy-header-bypasses-api-bearer" }
+      ],
+      "routing": {
+        "required_lanes": ["security-privacy-trust"],
+        "acceptable_lanes": ["security-privacy-trust", "public-contract", "operations-configuration-deployment"],
+        "critical_lanes": ["security-privacy-trust"]
+      }
+    },
+    "D-SECURITY-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-SECURITY-HOLDOUT-1", "severity": "P1", "defect_class": "symlinked-parent-escapes-artifact-root" }
+      ],
+      "routing": {
+        "required_lanes": ["security-privacy-trust"],
+        "acceptable_lanes": ["security-privacy-trust", "lifecycle-resource-ownership", "operations-configuration-deployment"],
+        "critical_lanes": ["security-privacy-trust"]
+      }
+    },
+    "D-PERSISTENCE-DEV": {
+      "findings": [
+        { "id": "F-D-PERSISTENCE-DEV-1", "severity": "P1", "defect_class": "external-fts-delete-loses-old-index-content" }
+      ],
+      "routing": {
+        "required_lanes": ["persistence-migration-recovery"],
+        "acceptable_lanes": ["persistence-migration-recovery", "domain-value-integrity"],
+        "critical_lanes": ["persistence-migration-recovery"]
+      }
+    },
+    "D-PERSISTENCE-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-PERSISTENCE-HOLDOUT-1", "severity": "P1", "defect_class": "migration-steps-not-atomic-with-version" }
+      ],
+      "routing": {
+        "required_lanes": ["persistence-migration-recovery"],
+        "acceptable_lanes": ["persistence-migration-recovery"],
+        "critical_lanes": ["persistence-migration-recovery"]
+      }
+    },
+    "D-CONCURRENCY-DEV": {
+      "findings": [
+        { "id": "F-D-CONCURRENCY-DEV-1", "severity": "P1", "defect_class": "remote-effects-precede-atomic-plan-claim" },
+        { "id": "F-D-CONCURRENCY-DEV-2", "severity": "P1", "defect_class": "retry-replays-durable-successes" }
+      ],
+      "routing": {
+        "required_lanes": ["concurrency-workflow-ordering", "persistence-migration-recovery"],
+        "acceptable_lanes": ["concurrency-workflow-ordering", "persistence-migration-recovery", "lifecycle-resource-ownership"],
+        "critical_lanes": ["concurrency-workflow-ordering"]
+      }
+    },
+    "D-CONCURRENCY-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-CONCURRENCY-HOLDOUT-1", "severity": "P1", "defect_class": "aborted-poller-reschedules-owned-work" }
+      ],
+      "routing": {
+        "required_lanes": ["concurrency-workflow-ordering", "lifecycle-resource-ownership"],
+        "acceptable_lanes": ["concurrency-workflow-ordering", "lifecycle-resource-ownership"],
+        "critical_lanes": ["concurrency-workflow-ordering"]
+      }
+    },
+    "D-PERFORMANCE-DEV": {
+      "findings": [
+        { "id": "F-D-PERFORMANCE-DEV-1", "severity": "P1", "defect_class": "streamed-message-buffered-in-full" }
+      ],
+      "routing": {
+        "required_lanes": ["performance-capacity-backpressure"],
+        "acceptable_lanes": ["performance-capacity-backpressure", "lifecycle-resource-ownership"],
+        "critical_lanes": ["performance-capacity-backpressure"]
+      }
+    },
+    "D-PERFORMANCE-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-PERFORMANCE-HOLDOUT-1", "severity": "P1", "defect_class": "search-hydrates-unbounded-candidate-set" }
+      ],
+      "routing": {
+        "required_lanes": ["performance-capacity-backpressure"],
+        "acceptable_lanes": ["performance-capacity-backpressure", "persistence-migration-recovery"],
+        "critical_lanes": ["performance-capacity-backpressure"]
+      }
+    },
+    "D-PROTOCOL-DEV": {
+      "findings": [
+        { "id": "F-D-PROTOCOL-DEV-1", "severity": "P1", "defect_class": "imap-command-inside-fetch-generator-deadlocks" }
+      ],
+      "routing": {
+        "required_lanes": ["external-protocol-integration", "concurrency-workflow-ordering"],
+        "acceptable_lanes": ["external-protocol-integration", "concurrency-workflow-ordering", "performance-capacity-backpressure"],
+        "critical_lanes": ["external-protocol-integration", "concurrency-workflow-ordering"]
+      }
+    },
+    "D-PROTOCOL-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-PROTOCOL-HOLDOUT-1", "severity": "P2", "defect_class": "retry-after-seconds-used-as-milliseconds" },
+        { "id": "F-D-PROTOCOL-HOLDOUT-2", "severity": "P2", "defect_class": "unsupported-retry-date-becomes-immediate-retry" }
+      ],
+      "routing": {
+        "required_lanes": ["external-protocol-integration"],
+        "acceptable_lanes": ["external-protocol-integration", "concurrency-workflow-ordering"],
+        "critical_lanes": ["external-protocol-integration"]
+      }
+    },
+    "D-OPERATIONS-DEV": {
+      "findings": [
+        { "id": "F-D-OPERATIONS-DEV-1", "severity": "P1", "defect_class": "allocated-port-not-closed-across-runtime-surfaces" },
+        { "id": "F-D-OPERATIONS-DEV-2", "severity": "P2", "defect_class": "integration-test-binds-production-port" }
+      ],
+      "routing": {
+        "required_lanes": ["operations-configuration-deployment", "public-contract"],
+        "acceptable_lanes": ["operations-configuration-deployment", "public-contract", "concurrency-workflow-ordering"],
+        "critical_lanes": ["operations-configuration-deployment"]
+      }
+    },
+    "D-OPERATIONS-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-OPERATIONS-HOLDOUT-1", "severity": "P1", "defect_class": "container-port-mapping-targets-wrong-listener" },
+        { "id": "F-D-OPERATIONS-HOLDOUT-2", "severity": "P2", "defect_class": "healthcheck-probes-wrong-container-port" }
+      ],
+      "routing": {
+        "required_lanes": ["operations-configuration-deployment"],
+        "acceptable_lanes": ["operations-configuration-deployment", "public-contract"],
+        "critical_lanes": ["operations-configuration-deployment"]
+      }
+    },
+    "D-COMPOSED-PUBLICATION-DEV": {
+      "findings": [
+        { "id": "F-D-COMPOSED-PUBLICATION-DEV-1", "severity": "P1", "defect_class": "publication-state-precedes-delivery" },
+        { "id": "F-D-COMPOSED-PUBLICATION-DEV-2", "severity": "P1", "defect_class": "ambiguous-ack-retry-duplicates-delivery" }
+      ],
+      "routing": {
+        "required_lanes": ["concurrency-workflow-ordering", "persistence-migration-recovery", "external-protocol-integration"],
+        "acceptable_lanes": ["concurrency-workflow-ordering", "persistence-migration-recovery", "external-protocol-integration"],
+        "critical_lanes": ["concurrency-workflow-ordering", "persistence-migration-recovery"]
+      }
+    },
+    "D-OUTCOME-RECOVERY-HOLDOUT": {
+      "findings": [
+        { "id": "F-D-OUTCOME-RECOVERY-HOLDOUT-1", "severity": "P1", "defect_class": "backup-omits-retained-content-files" },
+        { "id": "F-D-OUTCOME-RECOVERY-HOLDOUT-2", "severity": "P2", "defect_class": "uninstall-leaves-persistent-service-definition" }
+      ],
+      "routing": {
+        "required_lanes": ["persistence-migration-recovery", "operations-configuration-deployment"],
+        "acceptable_lanes": ["persistence-migration-recovery", "operations-configuration-deployment"],
+        "critical_lanes": ["persistence-migration-recovery", "operations-configuration-deployment"]
+      }
     },
     "R-VALUE-DEV": {
       "findings": [
-        {
-          "id": "F-R-VALUE-DEV-1",
-          "severity": "P2",
-          "defect_class": "repair-suppresses-first-user-edit"
-        }
+        { "id": "F-R-VALUE-DEV-1", "severity": "P2", "defect_class": "repair-suppresses-first-user-edit" }
       ]
     },
     "R-A11Y-DEV": {
       "findings": [
-        {
-          "id": "F-R-A11Y-DEV-1",
-          "severity": "P2",
-          "defect_class": "repair-describes-wrapper-not-focus-target"
-        }
+        { "id": "F-R-A11Y-DEV-1", "severity": "P2", "defect_class": "repair-describes-wrapper-not-focus-target" }
       ]
     },
     "R-VALUE-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-R-VALUE-HOLDOUT-1",
-          "severity": "P2",
-          "defect_class": "repair-collapses-typed-choice-identity"
-        }
+        { "id": "F-R-VALUE-HOLDOUT-1", "severity": "P2", "defect_class": "repair-collapses-typed-choice-identity" }
       ]
     },
     "R-A11Y-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-R-A11Y-HOLDOUT-1",
-          "severity": "P1",
-          "defect_class": "repair-freezes-panel-stacking"
-        }
+        { "id": "F-R-A11Y-HOLDOUT-1", "severity": "P1", "defect_class": "repair-freezes-panel-stacking" }
       ]
     },
     "R-CONTRACT-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-R-CONTRACT-HOLDOUT-1",
-          "severity": "P2",
-          "defect_class": "repair-breaks-unspecialized-construction"
-        }
+        { "id": "F-R-CONTRACT-HOLDOUT-1", "severity": "P2", "defect_class": "repair-breaks-unspecialized-construction" }
       ]
     },
     "R-LIFECYCLE-HOLDOUT": {
       "findings": [
-        {
-          "id": "F-R-LIFECYCLE-HOLDOUT-1",
-          "severity": "P2",
-          "defect_class": "repair-keeps-ambient-observer-realm"
-        },
-        {
-          "id": "F-R-LIFECYCLE-HOLDOUT-2",
-          "severity": "P2",
-          "defect_class": "repair-skips-initial-visibility-sync"
-        }
+        { "id": "F-R-LIFECYCLE-HOLDOUT-1", "severity": "P2", "defect_class": "repair-keeps-ambient-observer-realm" },
+        { "id": "F-R-LIFECYCLE-HOLDOUT-2", "severity": "P2", "defect_class": "repair-skips-initial-visibility-sync" }
       ]
     },
-    "R-CONTROL-HOLDOUT": {
-      "findings": []
-    }
+    "R-CONTROL-HOLDOUT": { "findings": [] }
   }
 }

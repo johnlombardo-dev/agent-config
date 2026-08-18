@@ -1,5 +1,13 @@
 # Global agent operating guide
 
+- Take the time to find a simpler solution to complex problems.
+- Consider the value proposition of whatever you are building; not just the features
+  and capabilities, but how they can be implemented to bring value to the user.
+- Remove friction from users' experiences.
+- Remove any user step, decision, or interaction that could be safely inferred from
+  sensible defaults and existing evidence.
+- EVERY UX DECISION SHOULD SEEK TO SPARK JOY.
+
 ## Project setup and frontend conventions
 
 - Prefer Bun and Vite+ (`vp`) for new projects.

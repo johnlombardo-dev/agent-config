@@ -63,6 +63,8 @@ Append `subagent_started` immediately before every subagent dispatch:
   "role": "luna_worker",
   "requested_model": null,
   "requested_reasoning_effort": "medium",
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "medium",
   "objective": "Implement the bounded storage migration and run its focused tests."
 }
 ```
@@ -80,7 +82,9 @@ Append `subagent_outcome` when that dispatch reaches a terminal state:
 
 Every start and outcome receives its own generated `created_at`. `objective` and `result` are
 required, non-empty, single-line descriptions. Use requested runtime settings in the start record;
-use `null` when a model or effort was not requested explicitly.
+use `null` when a model or effort was not requested explicitly. `model` and
+`reasoning_effort` record the effective runtime settings and are required non-null values after
+resolving role defaults and inherited settings.
 
 Allowed outcomes are `completed`, `useful-no-go`, `failed`, `blocked`, `cancelled`, `interrupted`,
 and `superseded`. Record null, negative, ambiguous, and unavailable results through the applicable

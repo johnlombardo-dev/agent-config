@@ -1,12 +1,12 @@
 ---
 name: evidence-first-review
 description: >-
-  Review a code change or existing system by mapping its behavioral seams,
-  running four focused defect-finding lanes, and requiring executable evidence
+  Review a code change or existing system by mapping behavioral seams, selecting
+  only the applicable defect-finding lanes, and requiring executable evidence
   where the risk can be exercised. Use for code review, regression hunts,
-  pre-merge audits, large integrated changes, or system-wide bug hunts when a
-  broad diff reading is likely to miss value, accessibility, public API, or
-  lifecycle failures.
+  pre-merge audits, large integrated changes, or system-wide bug hunts across
+  UI, backend, storage, security, workflows, protocols, performance, and
+  operations.
 ---
 
 # Evidence-first review
@@ -22,40 +22,51 @@ Choose one mode and record it in the result.
 
 Freeze the target fingerprint, repository instructions, allowed tools, time or token budget, and checks that may run. Treat dirty state as part of the target. Review read-only. Do not implement fixes, change Git or PR state, or write metrics.
 
-## Map the seams
+## Build the target manifest
 
-Before reading line by line, list the boundaries where behavior can disagree:
+Before reading line by line, map:
 
-- canonical, draft, formatted, serialized, and external values;
-- direct controls, composed wrappers, portals, focus targets, and input methods;
-- public types, runtime guards, exports, packages, and server or browser entrypoints;
-- refs, observers, subscriptions, effects, timers, hidden state, hydration, and cleanup;
-- modes, events, guards, effects, retries, cancellation, and interacting processes that form an informal state machine.
+- the claimed behavior and its owning boundary;
+- changed files, generated artifacts, dependencies, configuration, and documentation;
+- direct consumers, equivalent entrypoints, durable state, external systems, and deployment surfaces;
+- modes, events, guards, effects, retries, cancellation, cleanup, scale limits, and trust boundaries;
+- relevant tests, acceptance criteria, and prior demonstrated failures.
 
-Use this map to select evidence. Do not spend equal effort on every file.
+Use the manifest to route the review. A path or keyword alone is a locator, not evidence that a lane applies.
+Give each manifested seam an owning lane, distinct invariants, and an evidence status: `exercised`, `gap`, or `not applicable`. A finding settles only its violated invariant; continue through the rest. Do not call a lane complete until every owned invariant has a status and reason.
 
-## Run four independent lanes
+## Route only applicable lanes
 
-Run all applicable lanes independently. Parallel execution is useful when fresh reviewers and a shared target are available. Do not pass one lane's conclusions into another before they return.
+Select a lane immediately when the target directly changes its owning boundary, the acceptance criteria explicitly name its risk, or a prior demonstrated defect exists at the same seam. Otherwise select it only when two independent signal groups agree: a risky construct, an affected consumer or contract, failure or scale behavior, and a technology or path marker.
 
-1. **Value integrity:** lossless formatting, round trips, canonical versus draft values, atomic writes, unavailable choices, invalid numbers, and silent normalization.
-2. **Accessibility and interaction:** names, descriptions, errors, keyboard and pointer behavior, focus return, disabled and read-only behavior, portals, coarse pointers, forced colors, and RTL.
-3. **Public contract:** generic inference, runtime configuration guards, exact props, exports, package isolation, SSR, and direct versus composed behavior.
-4. **Lifecycle and rendering:** refs, observers, subscriptions, hidden-state cleanup, hydration, resizing, streaming buffers, realms, and rendering-library behavior.
+Read only the playbooks for selected lanes:
 
-Read [evidence-techniques.md](references/evidence-techniques.md) after the seam map. Pick the cheapest faithful methods for the identified risks. A passing broad suite is context, not proof of an uncovered interaction.
+1. **Domain and value integrity:** canonical identity, transformations, calculations, business rules, routing, and round trips. Read [domain-value-integrity.md](references/lanes/domain-value-integrity.md).
+2. **Accessibility and interaction:** rendered controls, focus, keyboard, pointer, portals, names, and states. Read [accessibility-interaction.md](references/lanes/accessibility-interaction.md).
+3. **Public contract:** exports, schemas, API and CLI shapes, runtime guards, packages, and compatibility. Read [public-contract.md](references/lanes/public-contract.md).
+4. **Lifecycle and resource ownership:** acquisition, cleanup, streams, handles, observers, subscriptions, and mount or start/stop behavior. Read [lifecycle-resource-ownership.md](references/lanes/lifecycle-resource-ownership.md).
+5. **Security, privacy, and trust:** authentication, authorization, secrets, untrusted data, sensitive output, and filesystem or network boundaries. Read [security-privacy-trust.md](references/lanes/security-privacy-trust.md).
+6. **Persistence, migration, and recovery:** schemas, transactions, indexes, checkpoints, backups, atomic files, crashes, and restarts. Read [persistence-migration-recovery.md](references/lanes/persistence-migration-recovery.md).
+7. **Concurrency, workflow, and ordering:** locks, queues, actors, retries, cancellation, idempotency, races, and partial failures. Read [concurrency-workflow-ordering.md](references/lanes/concurrency-workflow-ordering.md).
+8. **Performance, capacity, and backpressure:** unbounded inputs, buffering, queries, batching, pagination, caches, and resource ceilings. Read [performance-capacity-backpressure.md](references/lanes/performance-capacity-backpressure.md).
+9. **External protocol and integration:** vendor APIs, SDK runtime behavior, wire protocols, capabilities, parsers, and fallbacks. Read [external-protocol-integration.md](references/lanes/external-protocol-integration.md).
+10. **Operations, configuration, and deployment:** ports, paths, environment, service managers, CI, build, release, and documentation parity. Read [operations-configuration-deployment.md](references/lanes/operations-configuration-deployment.md).
+
+Run selected lanes independently. Do not select a lane merely to be comprehensive. More than three lanes requires a concrete cross-cutting justification. Selecting all lanes is appropriate only for an explicitly broad system or release audit whose manifest demonstrates every surface.
+
+A running lane may escalate to another lane only after identifying a concrete seam owned there. Record the evidence for the escalation. Read [evidence-techniques.md](references/evidence-techniques.md) once after routing, then choose the cheapest faithful probes. A passing broad suite is context, not proof of an uncovered interaction.
 
 ## Keep only demonstrated findings
 
 Keep a finding only when it has all of these:
 
-- a violated invariant or user-visible failure;
+- an owning lane and a violated invariant or user-visible failure;
 - a minimal reproduction, executable probe, or direct source proof;
 - a narrow location and affected behavior;
 - a severity and provenance classification;
 - enough evidence that an implementer can verify the repair.
 
-Do not repair while lanes are active. Deduplicate after every lane returns, then publish one batch.
+Do not repair while lanes are active. Deduplicate after every selected lane returns, then publish one batch.
 
 ## Report
 
@@ -63,9 +74,10 @@ Return:
 
 ```text
 TARGET: mode, fingerprint, budget, checks run
-SEAMS: reviewed boundaries
-FINDINGS: severity, provenance, invariant, reproduction, location, evidence
-GAPS: seams not exercised and why
+MANIFEST: seam, owner, invariant, durable/external/operational surfaces, evidence status + reason
+ROUTING: selected lane + triggers; skipped lane + reason; escalations
+FINDINGS: lane, severity, provenance, invariant, reproduction, location, evidence
+GAPS: manifested invariants marked gap and the missing evidence
 RESULT: findings | no confirmed findings
 ```
 
