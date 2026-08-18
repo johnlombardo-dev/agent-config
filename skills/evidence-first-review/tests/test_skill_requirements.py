@@ -66,6 +66,13 @@ class SkillRequirementTests(unittest.TestCase):
             "security-privacy-trust.md": (
                 "attacker-known",
                 "recompute dependent fields",
+                "transition that can begin",
+                "acting credential cannot mint",
+                "authenticated context",
+                "re-exports",
+                "incremental ceilings",
+                "output policies",
+                "runtime reachability",
             ),
             "operations-configuration-deployment.md": (
                 "prove invocation",

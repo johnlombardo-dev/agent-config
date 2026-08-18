@@ -95,7 +95,7 @@ class ScoreBenchmarkTests(unittest.TestCase):
         )
 
     def test_shipped_corpus_is_complete_and_blind(self) -> None:
-        self.assertEqual(len(self.cases), 31)
+        self.assertEqual(len(self.cases), 34)
         self.assertEqual(
             {case["lane"] for case in self.cases.values()},
             {
@@ -124,6 +124,20 @@ class ScoreBenchmarkTests(unittest.TestCase):
             "D-OUTCOME-RECOVERY-HOLDOUT": {
                 "persistence-migration-recovery",
                 "operations-configuration-deployment",
+            },
+            "D-AUTHORITY-RECOVERY-DEV": {
+                "security-privacy-trust",
+                "concurrency-workflow-ordering",
+            },
+            "D-ADMISSION-MATERIALIZATION-HOLDOUT": {
+                "security-privacy-trust",
+                "performance-capacity-backpressure",
+            },
+            "D-APPROVAL-PROVENANCE-HOLDOUT": {
+                "security-privacy-trust",
+                "domain-value-integrity",
+                "persistence-migration-recovery",
+                "concurrency-workflow-ordering",
             },
         }
         for case_id, expected in expected_routes.items():
