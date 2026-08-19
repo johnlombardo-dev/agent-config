@@ -26,12 +26,31 @@ class MapLunaContractsTests(unittest.TestCase):
             "## Shared-surface ledger",
             "## Unified validation plan",
             "dispatch waves",
-            "CRITERION | PRODUCING CONTRACTS | OBSERVING CHECK",
+            "CRITERION | PRODUCING NODES | OBSERVING CHECK",
         ):
             self.assertIn(phrase, normalized)
 
         self.assertNotIn("## Compact worker contract", skill)
         self.assertNotIn("## Full additions", skill)
+
+    def test_goal_coverage_counts_all_execution_nodes(self) -> None:
+        skill = " ".join(
+            (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8").split()
+        )
+
+        for phrase in (
+            "owning execution node and an observing validation check",
+            "The mapped execution-node set must be",
+            "whether it is a shaped Luna contract or a `requires-higher-capability` escalation node",
+            "each high-capability escalation node's acceptance and verification checks",
+            "SURFACE | NODES | MUTATION OWNER/ORDER",
+            "CRITERION | PRODUCING NODES | OBSERVING CHECK",
+            "a `requires-higher-capability` node contributes the acceptance and verification checks",
+        ):
+            self.assertIn(phrase, skill)
+
+        self.assertNotIn("maps to at least one contract", skill)
+        self.assertNotIn("CRITERION | PRODUCING CONTRACTS", skill)
 
     def test_map_preserves_non_luna_work(self) -> None:
         skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")

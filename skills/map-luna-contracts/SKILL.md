@@ -14,9 +14,10 @@ description: >-
 # Map Luna contracts
 
 Turn current implementation evidence into a dependency-aware contract map for the stated problem.
-Use [shape-luna-contract](../shape-luna-contract/SKILL.md) as the normative shaper for every worker
-contract. This skill adds only set-level coverage, dependency, shared-surface, scheduling, and
-validation semantics.
+Use [shape-luna-contract](../shape-luna-contract/SKILL.md) as the normative shaper for every
+Luna-eligible worker contract and as the eligibility gate for high-capability execution nodes. This
+skill adds only set-level coverage, dependency, shared-surface, scheduling, and validation
+semantics.
 
 Do not use this skill as a mandatory preflight for `scale-sol-luna-goals`. A full map has a higher
 planning cost and a larger invalidation surface than one next-dispatch contract. Use it when the
@@ -56,7 +57,7 @@ Before shaping any worker node, read `../shape-luna-contract/SKILL.md` completel
   supports them.
 - Do not make a Consequential Decision, implement, mutate project state, dispatch an agent, select
   runtime models, or declare the larger goal complete.
-- Do not call the set complete while a goal criterion lacks both an owning contract and an
+- Do not call the set complete while a goal criterion lacks both an owning execution node and an
   observing validation check.
 - Return `PREREQUISITE` when missing authority, evidence, or an unresolved Consequential Decision
   prevents a trustworthy map. Include stable partial structure only when it is clearly marked
@@ -64,14 +65,15 @@ Before shaping any worker node, read `../shape-luna-contract/SKILL.md` completel
 
 ## Set validity
 
-The contract set must be:
+The mapped execution-node set must be:
 
-- **Complete:** every goal criterion and required retirement outcome maps to at least one contract.
-- **Non-overlapping:** concurrent contracts have disjoint mutation ownership. Serial contracts
+- **Complete:** every goal criterion and required retirement outcome maps to at least one execution
+  node, whether it is a shaped Luna contract or a `requires-higher-capability` escalation node.
+- **Non-overlapping:** concurrent execution nodes have disjoint mutation ownership. Serial nodes
   that touch the same surface name the order, handoff state, and revalidation trigger.
 - **Connected:** every dependency, produced artifact, consumer, and shared surface appears in the
   graph instead of remaining implicit in prose.
-- **Closed:** contract checks, cross-contract seam checks, and final integration checks collectively
+- **Closed:** node checks, cross-node seam checks, and final integration checks collectively
   prove the original goal rather than only the individual edits.
 
 Add an edge, serialize work, or merge nodes when apparently separate outcomes cannot be accepted
@@ -89,7 +91,7 @@ independently. Keep uncertainties visible as reshape triggers instead of inventi
 3. **Map eligible outcomes.** Identify the currently knowable implementation, migration, cleanup,
    compatibility, and evidence outcomes outside those protected domains. Prefer end-to-end
    behavior slices over file, layer, or setup-only partitions.
-4. **Build the graph.** Give every outcome a stable contract ID. Record prerequisite contracts,
+4. **Build the graph.** Give every outcome a stable node ID. Record prerequisite nodes,
    produced state, consumers, and earliest safe wave. Detect cycles and orphan nodes.
 5. **Build the shared-surface ledger.** Record every file, API, type, schema, state owner, fixture,
    generated artifact, or operational boundary used by more than one node. Assign one mutation
@@ -99,9 +101,10 @@ independently. Keep uncertainties visible as reshape triggers instead of inventi
    unshaped `blocked-by-dependency` nodes. A map may contain many shaped contracts even though the
    component skill returns exactly one per application. Preserve `ESCALATE` outcomes as non-Luna
    nodes and mark other evidence-dependent outcomes for later reshaping.
-7. **Unify validation.** Retain each contract's checks, add shared-surface checks at producer and
+7. **Unify validation.** Retain each shaped Luna contract's checks and each high-capability
+   escalation node's acceptance and verification checks. Add shared-surface checks at producer and
    consumer boundaries, and map every goal criterion to a final observing check.
-8. **Audit the set.** Reject missing criteria, contracts without goal value, hidden shared mutation,
+8. **Audit the set.** Reject missing criteria, nodes without goal value, hidden shared mutation,
    dependency cycles, duplicate work, missing cleanup, and closure checks that observe only local
    edits.
 
@@ -149,18 +152,20 @@ semantics.
 Emit:
 
 ```text
-SURFACE | CONTRACTS | MUTATION OWNER/ORDER | INVARIANT | COMPATIBILITY CHECK | INVALIDATION TRIGGER
+SURFACE | NODES | MUTATION OWNER/ORDER | INVARIANT | COMPATIBILITY CHECK | INVALIDATION TRIGGER
 ```
 
 Sharing a surface does not authorize concurrent mutation. Prefer one producer with explicit
-consumers. When serial mutation is unavoidable, later contracts receive the integrated fingerprint
+consumers. When serial mutation is unavoidable, later nodes receive the integrated fingerprint
 and must revalidate the named invariant before editing.
 
 ## Unified validation plan
 
 Use the smallest faithful set of checks across three levels:
 
-1. **Contract checks:** owned by each shaped worker contract.
+1. **Node checks:** owned by every executable node. A shaped Luna contract contributes its
+   `DONE WHEN` checks; a `requires-higher-capability` node contributes the acceptance and
+   verification checks in its escalation record.
 2. **Shared-surface checks:** run after the last producer and before dependent consumers rely on
    the surface. Exercise the relevant boundary invariant, such as direct/composed parity, write
    closure, lifecycle ordering, or schema compatibility.
@@ -170,7 +175,7 @@ Use the smallest faithful set of checks across three levels:
 Emit:
 
 ```text
-CRITERION | PRODUCING CONTRACTS | OBSERVING CHECK | RUN AFTER | EVIDENCE OWNER
+CRITERION | PRODUCING NODES | OBSERVING CHECK | RUN AFTER | EVIDENCE OWNER
 ```
 
 If the mapped work contains coordinated modes, events, guards, effects, retries, cancellation,
