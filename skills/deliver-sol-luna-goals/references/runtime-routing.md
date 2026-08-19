@@ -45,6 +45,10 @@ Use the lowest adequate effort:
   is likely to reopen frozen decisions, expand scope, or encourage speculative redesign.
 - Preserve design and implementation ownership together when the escalation says separating them
   would break the invariant.
+- Dispatch only with a Sol-approved escalation envelope. When design choices must remain coupled
+  to implementation, require a bounded coupled-decision mandate naming the permitted questions,
+  frozen boundaries, and stop conditions. The implementer must return any decision outside that
+  mandate instead of widening its authority.
 - State-chart design or implementation is a hard member of this route. Luna may handle adjacent
   mechanical work only when it does not alter states, events, transitions, guards, actions,
   actors, context ownership, persistence, cancellation, or lifecycle semantics.

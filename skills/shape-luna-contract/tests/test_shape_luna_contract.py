@@ -49,9 +49,25 @@ class ShapeLunaContractTests(unittest.TestCase):
             "unnecessary `max` reasoning can reopen frozen decisions",
             "Never select `ultra`",
             "If the selected route is unavailable, the work remains pending rather than falling back to Luna",
+            "caller-approved bounded coupled-decision mandate",
             "`ESCALATE`",
         ):
             self.assertIn(phrase, normalized)
+
+    def test_shaper_returns_logical_routes_and_leaves_runtime_fields_to_caller(self) -> None:
+        skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        normalized = " ".join(skill.split())
+
+        for phrase in (
+            "logical parent-only record",
+            "do not fill caller-owned runtime fields",
+            "ROUTE REQUIREMENT: execution-worker role",
+            "Those fields are not part of the shaper result",
+            "The caller must freeze the coupled questions",
+        ):
+            self.assertIn(phrase.lower(), normalized.lower())
+
+        self.assertNotIn("ROUTE: logical role, current runtime mapping", skill)
 
     def test_orchestrators_use_singular_shaper_without_duplicate_schema(self) -> None:
         for consumer_name in ("scale-sol-luna-goals", "deliver-sol-luna-goals"):
@@ -64,11 +80,16 @@ class ShapeLunaContractTests(unittest.TestCase):
             self.assertIn("../shape-luna-contract/SKILL.md", skill)
             self.assertIn("exactly one dependency-ready outcome", skill)
             self.assertIn("Never send an `ESCALATE` outcome to Luna", skill)
+            self.assertIn("bounded coupled-decision mandate", skill)
+            self.assertIn("accepted escalation envelope", skill)
+            self.assertIn("caller-owned runtime fields", skill)
             self.assertIn("GPT-5.6 Sol with `high`, `xhigh`, or `max` effort", routing)
             self.assertIn("Use `xhigh` by default to design or semantically verify", routing)
             self.assertIn("When selecting `max`, record the trigger", routing)
             self.assertIn("Never use `ultra`", routing)
             self.assertIn("Do not silently substitute", routing)
+            self.assertIn("bounded coupled-decision mandate", routing)
+            self.assertIn("must return any decision", routing)
             self.assertNotIn("## Compact worker contract", skill)
             self.assertNotIn("## Full additions", skill)
 

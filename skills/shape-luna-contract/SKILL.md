@@ -40,6 +40,9 @@ prerequisite for this skill.
   larger goal complete.
 - Return `PREREQUISITE` when missing authority, evidence, or an unresolved Consequential Decision
   prevents a trustworthy next contract. State the exact prerequisite rather than filling the gap.
+- For an indivisible `ESCALATE` outcome, identify any design choices that must remain coupled to
+  implementation. The shaper does not make those choices or grant decision authority; it gives the
+  caller enough information to freeze them or approve a bounded coupled-decision mandate.
 
 ## Luna eligibility gate
 
@@ -199,26 +202,35 @@ Return one of:
 
 - `READY`: exactly one worker contract, its profile, decisive evidence pointers, and at most one
   provisional successor for the caller.
-- `ESCALATE`: the indivisible outcome, reason it is not Luna-safe, coupled decisions and invariants,
-  exact authority and acceptance boundary, and the logical requirement for the highest-capability
+- `ESCALATE`: the indivisible outcome, reason it is not Luna-safe, coupled decision questions and
+  invariants, exact authority and acceptance boundary, questions that require a caller-approved
+  bounded coupled-decision mandate, and the logical requirement for the highest-capability
   implementation route with independently selected `high`, `xhigh`, or `max` effort and `ultra`
   forbidden.
 - `PREREQUISITE`: the exact missing decision, evidence, authority, dependency, or mutation owner.
 - `NO-OP`: evidence that no implementation outcome is currently required at this checkpoint.
 
-When composed inside an orchestrator, also return this parent-only record. Never put it in a Luna
-prompt:
+When composed inside an orchestrator, also return this logical parent-only record. Never put it in
+a Luna prompt, and do not fill caller-owned runtime fields:
 
 ```text
 TASK: ID, profile, outcome and Failure Domain, prerequisite state, split/reshape trigger
-ROUTE: logical role, current runtime mapping, effort, context fork, verification evidence
+ROUTE REQUIREMENT: execution-worker role and logical capability or verification constraints
 OWNERSHIP: mutation reservation, protected surfaces, and concurrent tasks
 NEXT: at most one provisional successor plus its dependency or reshape trigger
 ```
 
-For `ESCALATE`, replace `TASK` and `ROUTE` with:
+After accepting the result, the caller augments it with the concrete runtime mapping, selected and
+effective worker effort, context fork, and route-verification evidence. Those fields are not part of
+the shaper result.
+
+For `ESCALATE`, replace `TASK` and `ROUTE REQUIREMENT` with:
 
 ```text
-ESCALATION: outcome, indivisible Failure Domain, coupled decisions/invariants, and acceptance checks
-ROUTE: highest-capability implementation route, selected high/xhigh/max effort, effort trigger, why lower effort is insufficient when max, ultra forbidden, and verification evidence
+ESCALATION: outcome, indivisible Failure Domain, coupled decision questions/invariants, exact authority, acceptance checks, and required decision-mandate boundary
+ROUTE REQUIREMENT: highest-capability implementer, required logical high/xhigh/max effort, effort trigger, why lower effort is insufficient when max, and ultra forbidden
 ```
+
+The caller must freeze the coupled questions or approve the bounded decision mandate before
+dispatch, then populate the concrete runtime mapping, effective effort confirmation, context fork,
+and route-verification evidence.
