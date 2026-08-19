@@ -76,10 +76,12 @@ class ShapeLunaContractTests(unittest.TestCase):
             routing = (consumer / "references" / "runtime-routing.md").read_text(
                 encoding="utf-8"
             )
+            normalized_consumer = " ".join(skill.split())
 
             self.assertIn("../shape-luna-contract/SKILL.md", skill)
             self.assertIn("exactly one dependency-ready outcome", skill)
             self.assertIn("Never send an `ESCALATE` outcome to Luna", skill)
+            self.assertIn("Luna work must also be Decision-ready", normalized_consumer)
             self.assertIn("bounded coupled-decision mandate", skill)
             self.assertIn("accepted escalation envelope", skill)
             self.assertIn("caller-owned runtime fields", skill)
@@ -92,6 +94,14 @@ class ShapeLunaContractTests(unittest.TestCase):
             self.assertIn("must return any decision", routing)
             self.assertNotIn("## Compact worker contract", skill)
             self.assertNotIn("## Full additions", skill)
+
+        deliver_skill = (
+            REPOSITORY_ROOT / "skills" / "deliver-sol-luna-goals" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "An indivisible escalation may instead proceed to shaping",
+            " ".join(deliver_skill.split()),
+        )
 
         scale_packets = (
             REPOSITORY_ROOT

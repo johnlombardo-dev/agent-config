@@ -28,7 +28,8 @@ Apply orchestration rules as ordered filters:
 
 1. Higher-level instructions, user authorization, and model policy define the permitted routes.
 2. Current capability removes routes that cannot be used or verified as required.
-3. Assignment validity requires Defined, Decision-ready, Safe, and Checkable work.
+3. Assignment validity requires Defined, Safe, and Checkable work; Luna work must also be
+   Decision-ready.
 4. Worth selects delegation or the fast path among the routes still permitted.
 5. `shape-luna-contract` governs Luna eligibility, high-capability escalation, and each next Luna contract's detail.
 6. Verification rules govern evidence depth and reuse.
@@ -60,7 +61,11 @@ for a whole-problem dependency map or coordinated multi-contract plan.
 
 Dispatch Luna only when it is Worth, Defined, Decision-ready, Safe, and Checkable.
 
-If not Defined, frame it. If not Decision-ready, research or decide. If not Safe, split it. If not Checkable, redefine the expected result. Only after validity is established, use the fast path when delegation is not Worth.
+If not Defined, frame it. If proposed Luna work is not Decision-ready, research or decide. An
+indivisible escalation may instead proceed to shaping so the orchestrator can freeze its coupled
+questions or approve a bounded mandate before dispatch. If not Safe, split it. If not Checkable,
+redefine the expected result. Only after validity is established, use the fast path when delegation
+is not Worth.
 
 ## Compact goal state
 
