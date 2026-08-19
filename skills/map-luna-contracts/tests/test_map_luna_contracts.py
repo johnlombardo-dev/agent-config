@@ -41,7 +41,11 @@ class MapLunaContractsTests(unittest.TestCase):
         for phrase in (
             "owning execution node and an observing validation check",
             "The mapped execution-node set must be",
-            "whether it is a shaped Luna contract or a `requires-higher-capability` escalation node",
+            "a shaped Luna contract, a `requires-higher-capability` escalation node, or an unshaped",
+            "A provisional node owns coverage in the map only",
+            "All four statuses count as execution nodes for goal-coverage completeness",
+            "provisional coverage owners, not executable assignments",
+            "It may own a criterion and planned goal-closure check",
             "each high-capability escalation node's acceptance and verification checks",
             "SURFACE | NODES | MUTATION OWNER/ORDER",
             "CRITERION | PRODUCING NODES | OBSERVING CHECK",

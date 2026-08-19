@@ -68,7 +68,9 @@ Before shaping any worker node, read `../shape-luna-contract/SKILL.md` completel
 The mapped execution-node set must be:
 
 - **Complete:** every goal criterion and required retirement outcome maps to at least one execution
-  node, whether it is a shaped Luna contract or a `requires-higher-capability` escalation node.
+  node: a shaped Luna contract, a `requires-higher-capability` escalation node, or an unshaped
+  `blocked-by-dependency` or `reshape-after-evidence` provisional node. A provisional node owns
+  coverage in the map only; it gains no mutation or dispatch authority until it is reshaped.
 - **Non-overlapping:** concurrent execution nodes have disjoint mutation ownership. Serial nodes
   that touch the same surface name the order, handoff state, and revalidation trigger.
 - **Connected:** every dependency, produced artifact, consumer, and shared surface appears in the
@@ -128,6 +130,9 @@ Use these statuses:
   highest-capability implementation route with effort selected independently as `high`, `xhigh`,
   or `max`; `ultra` is forbidden.
 
+All four statuses count as execution nodes for goal-coverage completeness. The two unshaped
+statuses are provisional coverage owners, not executable assignments or evidence of completion.
+
 Use `Compact` or `Full` for a shaped Luna node's `PROFILE`, `unshaped` for
 `blocked-by-dependency` and `reshape-after-evidence`, and `n/a` for
 `requires-higher-capability`.
@@ -135,11 +140,12 @@ Use `Compact` or `Full` for a shaped Luna node's `PROFILE`, `unshaped` for
 Only `ready` contracts may be dispatched to Luna. Do not invent a Luna prompt for a
 `blocked-by-dependency`, `reshape-after-evidence`, or `requires-higher-capability` node. An unshaped
 node may record candidate shared surfaces for coordination, but it owns no mutation authority and
-its profile, checks, and worker packet remain unset. Its `WAVE` is only the earliest candidate wave,
-not dispatch authority, and must be recomputed after shaping. After its dependencies or named
-evidence are integrated, reapply `shape-luna-contract` against the current fingerprint before
-changing its status to `ready` or `requires-higher-capability`. Route the latter using its
-escalation record and preserve it as a dependency for downstream nodes.
+its profile, node checks, and worker packet remain unset. It may own a criterion and planned
+goal-closure check in the coverage matrix, but it cannot supply acceptance evidence. Its `WAVE` is
+only the earliest candidate wave, not dispatch authority, and must be recomputed after shaping.
+After its dependencies or named evidence are integrated, reapply `shape-luna-contract` against the
+current fingerprint before changing its status to `ready` or `requires-higher-capability`. Route
+the latter using its escalation record and preserve it as a dependency for downstream nodes.
 
 For example, a map that introduces a state-chart may contain one mechanical port adapter, one
 indivisible high-capability state-chart node, and later mechanical caller and black-box test nodes.
