@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shape Luna Contract"
+  short_description: "Shape or escalate the next implementation outcome"
+  default_prompt: "Use $shape-luna-contract to shape exactly one next-dispatch Luna contract, or escalate the outcome when it is not safe for Luna."

@@ -5,6 +5,8 @@ from pathlib import Path
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = SKILL_ROOT.parents[1]
+CONTRACT_SKILL_ROOT = REPOSITORY_ROOT / "skills" / "shape-luna-contract"
 
 
 class NoReviewPhaseTests(unittest.TestCase):
@@ -14,6 +16,7 @@ class NoReviewPhaseTests(unittest.TestCase):
             SKILL_ROOT / "agents" / "openai.yaml",
             SKILL_ROOT / "references" / "runtime-routing.md",
             SKILL_ROOT / "references" / "task-packets.md",
+            CONTRACT_SKILL_ROOT / "SKILL.md",
         ]
         active_text = "\n".join(
             path.read_text(encoding="utf-8") for path in active_files
@@ -47,7 +50,9 @@ class NoReviewPhaseTests(unittest.TestCase):
         self.assertIn("must not calculate durations", metrics)
 
     def test_pre_delivery_qa_keeps_the_four_risk_classes(self) -> None:
-        skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        skill = (CONTRACT_SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        normalized_skill = " ".join(skill.lower().split())
+        single_line_skill = " ".join(skill.split())
 
         for risk_class in (
             "value integrity",
@@ -55,16 +60,18 @@ class NoReviewPhaseTests(unittest.TestCase):
             "public contract",
             "lifecycle and rendering",
         ):
-            self.assertIn(risk_class, skill)
+            self.assertIn(risk_class, normalized_skill)
 
         for bounded_requirement in (
             "one or two affected QA seams",
             "one invariant",
             "cheapest faithful check",
             "one adjacent counterexample",
-            "Reuse unchanged baselines and successful checks",
         ):
-            self.assertIn(bounded_requirement, skill)
+            self.assertIn(bounded_requirement, single_line_skill)
+
+        orchestrator = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Reuse unchanged baselines and successful checks", orchestrator)
 
 
 if __name__ == "__main__":
